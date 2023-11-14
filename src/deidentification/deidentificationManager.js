@@ -7,8 +7,8 @@ class DeidentificationManager {
 
     /**
      * Deidentification
-     * @param resource
-     * @returns {resource}
+     * @param {Resource} resource
+     * @returns {Resource}
      */
     deidentify({resource}) {
         this.visit(resource, '');
@@ -26,10 +26,12 @@ class DeidentificationManager {
         } else if (typeof node === 'object' && node !== null) {
             Object.keys(node).forEach(key => {
                 const newPath = `${path}.${key}`.replace(/^\./, ''); // Remove leading dot
-                if (this.shouldRedact(newPath)) {
-                    if (key === 'extension' || key === 'name' && newPath.endsWith('HumanName')) {
-                        node[`${key}`] = null; // Redact the node by setting it to null
-                    }
+                /**
+                 * type: string
+                 */
+                const matchingRules = this.findMatchingRules({path: newPath});
+                if (matchingRules.length > 0) {
+                    node[`${key}`] = null; // Redact the node by setting it to null
                 } else {
                     this.visit(node[`${key}`], newPath); // Continue traversal
                 }
@@ -37,12 +39,14 @@ class DeidentificationManager {
         }
     }
 
-    shouldRedact(path) {
-        return this.config.fhirPathRules.some(rule => {
-            if (rule.method === 'redact') {
-                return path.endsWith(rule.type);
-            }
-            return false;
+    /**
+     * Find matching rules
+     * @param {string} path
+     * @returns {Object}
+     */
+    findMatchingRules({path}) {
+        return this.config.fhirPathRules.filter(rule => {
+            return path.endsWith(rule.type);
         });
     }
 }
