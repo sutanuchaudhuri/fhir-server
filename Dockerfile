@@ -48,4 +48,3 @@ COPY --from=build /srv/src/node_modules /srv/src/node_modules
 
 # this gets replaced by the command in docker-compose
 CMD ["tail", "-f", "/dev/null"]
-

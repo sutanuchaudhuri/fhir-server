@@ -1,0 +1,17 @@
+{
+  "fhirVersion": "R4",
+  "fhirPathRules": [
+    {
+      "path": "nodesByType('Extension')",
+      "method": "redact"
+    },
+    {
+      "path": "Organization.identifier",
+      "method": "keep"
+    },
+    {
+      "path": "nodesByType('HumanName')",
+      "method": "redact"
+    }
+  ]
+}
