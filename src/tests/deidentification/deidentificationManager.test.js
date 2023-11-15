@@ -27,6 +27,16 @@ describe('deindentificationManager Tests', () => {
             console.log(result1);
 
         });
+        test('test 1 with full resource', async () => {
+
+            // Your FHIRPath expression
+            const fhirPathExpression = 'Patient.name.given';
+            // const fhirPathExpression = 'name.given';
+
+            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
+            console.log(result1);
+
+        });
         test('test 2', async () => {
             // Your FHIR JSON object
             const fhirJsonObject = {

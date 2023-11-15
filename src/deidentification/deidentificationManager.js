@@ -119,6 +119,74 @@ class DeidentificationManager {
         // Start the traversal with the full resource and the path parts
         return traverse(resource, parts);
     }
+
+    /**
+     * Find a field in a resource
+     * @param {string} path
+     * @param {Resource} resource
+     * @returns {*}
+     */
+    findFieldInResource(path, resource) {
+        // Split the path into parts
+        /**
+         * @type {string[]}
+         */
+        const parts = path.split('.');
+
+        /**
+         * @type {string}
+         */
+        const resourceName = parts.shift();
+
+        if (resource.resourceType !== resourceName) {
+            return undefined;
+        }
+
+        // Recursive function to traverse the resource
+        // noinspection TailRecursionJS
+        function traverse(currentResource, pathParts) {
+            // Base case: if no more path parts, return the current resource
+            if (pathParts.length === 0) {
+                return currentResource;
+            }
+
+            // Take the next part of the path
+            /**
+             * @type {string}
+             */
+            const nextPart = pathParts.shift();
+
+            // If the current resource is an array, iterate over it and apply the traversal to each element
+            if (Array.isArray(currentResource)) {
+                if (pathParts.length > 0) {
+                    return currentResource.map(element => traverse(element, [...pathParts]));
+                } else {
+                    // we're at the end of the path so look for a field
+                    return currentResource.map(element => element[`${nextPart}`]);
+                }
+            }
+
+            // If the current resource is an object, continue the traversal
+            if (currentResource && typeof currentResource === 'object') {
+                if (nextPart in currentResource) {
+                    if (pathParts.length > 0) {
+                        return traverse(currentResource[`${nextPart}`], pathParts);
+                    } else {
+                        // we're at the end of the path so look for a field
+                        return currentResource[`${nextPart}`];
+                    }
+                } else {
+                    return undefined;
+                }
+            }
+
+            // If the path is incorrect or field does not exist, return undefined
+            return undefined;
+        }
+
+        // Start the traversal with the full resource and the path parts
+        return traverse(resource, parts);
+    }
 }
 
 module.exports = {
