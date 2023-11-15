@@ -1,4 +1,9 @@
 const config = require('./config.json');
+// https://github.com/hl7/fhirpath.js/
+// const fhirpath = require('fhirpath');
+// For FHIR model data (choice type support) pull in the model file:
+// const fhirpath_r4_model = require('fhirpath/fhir-context/r4');
+
 
 class DeidentificationManager {
     constructor() {
@@ -11,25 +16,25 @@ class DeidentificationManager {
      * @returns {Resource}
      */
     deidentify({resource}) {
-        this.visit(resource, '');
+        this.visit(resource, ['']);
         return resource;
     }
 
     /**
      * visitor pattern
      * @param {Object|Object[]} node
-     * @param {string} path
+     * @param {string[]} path
      */
     visit(node, path) {
         if (Array.isArray(node)) {
-            node.forEach((item, index) => this.visit(item, `${path}[${index}]`));
+            node.forEach((item, _) => this.visit(item, path.slice(1)));
         } else if (typeof node === 'object' && node !== null) {
             Object.keys(node).forEach(key => {
-                const newPath = `${path}.${key}`.replace(/^\./, ''); // Remove leading dot
+                const newPath = path.slice(1);
                 /**
                  * type: string
                  */
-                const matchingRules = this.findMatchingRules({path: newPath});
+                const matchingRules = this.findMatchingRules({path: newPath, node: node[`${key}`]});
                 if (matchingRules.length > 0) {
                     node[`${key}`] = null; // Redact the node by setting it to null
                 } else {
@@ -41,13 +46,78 @@ class DeidentificationManager {
 
     /**
      * Find matching rules
-     * @param {string} path
+     * @param {string[]} path
+     * @param {Object} node
      * @returns {Object}
      */
-    findMatchingRules({path}) {
+    // eslint-disable-next-line no-unused-vars
+    findMatchingRules({path, node}) {
         return this.config.fhirPathRules.filter(rule => {
             return path.endsWith(rule.type);
         });
+    }
+
+    /**
+     * Find a field in a resource
+     * @param {string} path
+     * @param {Object} resource
+     * @returns {*}
+     */
+    findField(path, resource) {
+        // Split the path into parts
+        /**
+         * @type {string[]}
+         */
+        const parts = path.split('.');
+
+        /**
+         * @type {string}
+         */
+        const resourceName = parts.shift();
+
+        if (resource.resourceType !== resourceName) {
+            return undefined;
+        }
+
+        // Recursive function to traverse the resource
+        // noinspection TailRecursionJS
+        function traverse(currentResource, pathParts) {
+            // Base case: if no more path parts, return the current resource
+            if (pathParts.length === 0) {
+                return currentResource;
+            }
+
+            // Take the next part of the path
+            /**
+             * @type {string}
+             */
+            const nextPart = pathParts.shift();
+
+            // If the current resource is an array, iterate over it and apply the traversal to each element
+            if (Array.isArray(currentResource)) {
+                return currentResource.map(element => traverse(element, [...pathParts]));
+            }
+
+            // If the current resource is an object, continue the traversal
+            if (currentResource && typeof currentResource === 'object') {
+                if (nextPart in currentResource) {
+                    if (pathParts.length > 0) {
+                        return traverse(currentResource[`${nextPart}`], pathParts);
+                    } else {
+                        // we're at the end of the path so look for a field
+                        return currentResource.get(`${nextPart}`);
+                    }
+                } else {
+                    return undefined;
+                }
+            }
+
+            // If the path is incorrect or field does not exist, return undefined
+            return undefined;
+        }
+
+        // Start the traversal with the full resource and the path parts
+        return traverse(resource, parts);
     }
 }
 
