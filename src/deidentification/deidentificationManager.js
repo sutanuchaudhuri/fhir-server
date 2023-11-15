@@ -127,6 +127,7 @@ class DeidentificationManager {
      * @returns {*}
      */
     findFieldInResource(path, resource) {
+        const regexToParseNodesByType = /nodesByType\('([^']+)'\)/;
         // Split the path into parts
         /**
          * @type {string[]}
@@ -134,20 +135,45 @@ class DeidentificationManager {
         const parts = path.split('.');
 
         /**
-         * @type {string}
+         * @type {RegExpMatchArray}
          */
-        const resourceName = parts.shift();
+        const nadesByTypeMatch = path.match(regexToParseNodesByType);
 
-        if (resource.resourceType !== resourceName) {
-            return undefined;
+        /**
+         * @type {string|undefined}
+         */
+        let elementType;
+        if (nadesByTypeMatch) {
+            /**
+             * @type {string}
+             */
+            elementType = nadesByTypeMatch[1];
+            parts.shift();
+        } else {
+
+            /**
+             * @type {string}
+             */
+            const resourceName = parts.shift();
+
+            if (resource.resourceType !== resourceName) {
+                return undefined;
+            }
         }
 
         // Recursive function to traverse the resource
         // noinspection TailRecursionJS
-        function traverse(currentResource, pathParts) {
+        /**
+         * traverse
+         * @param {Object|Object[]} currentField
+         * @param {string[]} pathParts
+         * @param {string|undefined} elementType1
+         * @returns {undefined|*}
+         */
+        function traverse({currentField, pathParts, elementType1}) {
             // Base case: if no more path parts, return the current resource
             if (pathParts.length === 0) {
-                return currentResource;
+                return currentField;
             }
 
             // Take the next part of the path
@@ -157,23 +183,36 @@ class DeidentificationManager {
             const nextPart = pathParts.shift();
 
             // If the current resource is an array, iterate over it and apply the traversal to each element
-            if (Array.isArray(currentResource)) {
+            if (Array.isArray(currentField)) {
                 if (pathParts.length > 0) {
-                    return currentResource.map(element => traverse(element, [...pathParts]));
+                    return currentField.map(element => traverse(
+                            {
+                                currentField: element,
+                                pathParts: [...pathParts],
+                                elementType1: elementType1
+                            }
+                        )
+                    );
                 } else {
                     // we're at the end of the path so look for a field
-                    return currentResource.map(element => element[`${nextPart}`]);
+                    return currentField.map(element => element[`${nextPart}`]);
                 }
             }
 
             // If the current resource is an object, continue the traversal
-            if (currentResource && typeof currentResource === 'object') {
-                if (nextPart in currentResource) {
+            if (currentField && typeof currentField === 'object') {
+                if (nextPart in currentField) {
                     if (pathParts.length > 0) {
-                        return traverse(currentResource[`${nextPart}`], pathParts);
+                        return traverse(
+                            {
+                                currentField: currentField[`${nextPart}`],
+                                pathParts: pathParts,
+                                elementType1: elementType1
+                            }
+                        );
                     } else {
                         // we're at the end of the path so look for a field
-                        return currentResource[`${nextPart}`];
+                        return currentField[`${nextPart}`];
                     }
                 } else {
                     return undefined;
@@ -185,7 +224,7 @@ class DeidentificationManager {
         }
 
         // Start the traversal with the full resource and the path parts
-        return traverse(resource, parts);
+        return traverse({currentField: resource, pathParts: parts, elementType1: elementType});
     }
 }
 
