@@ -61,7 +61,7 @@ class DeidentificationManager {
      * Find a field in a resource
      * @param {string} path
      * @param {Resource} resource
-     * @returns {*}
+     * @returns {Object[]|undefined}
      */
     findFieldInResource(path, resource) {
         const regexToParseNodesByType = /nodesByType\('([^']+)'\)/;

@@ -43,7 +43,6 @@ describe('deindentificationManager Tests', () => {
             expect(result1).toStrictEqual([['SHYLA']]);
         });
         test('test for family with full resource', async () => {
-
             // Your FHIRPath expression
             const fhirPathExpression = 'Patient.name.family';
             // const fhirPathExpression = 'name.given';
@@ -51,6 +50,15 @@ describe('deindentificationManager Tests', () => {
             const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
             console.log(result1);
             expect(result1).toStrictEqual(['PATIENT1']);
+        });
+        test('test for different resource', async () => {
+            // Your FHIRPath expression
+            const fhirPathExpression = 'ExplanationOfBenefit.benefitBalance.financial.allowed';
+            // const fhirPathExpression = 'name.given';
+
+            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
+            console.log(result1);
+            expect(result1).toBeUndefined();
         });
         test('test for nodesByType with full resource', async () => {
 
