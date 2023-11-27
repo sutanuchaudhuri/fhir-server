@@ -47,6 +47,21 @@ describe('deindentificationManager Tests', () => {
             console.log(result1);
             expect(result1).toStrictEqual(['PATIENT1']);
         });
+        test('test findNodeByType', async () => {
+            const result1 = new DeidentificationManager().findNodeByType(new Patient(patient), 'HumanName');
+            console.log(result1);
+            expect(result1).toStrictEqual(['PATIENT1']);
+        });
+        test('test for nodesByType with full resource', async () => {
+
+            // Your FHIRPath expression
+            const fhirPathExpression = "nodesByType('HumanName').given";
+            // const fhirPathExpression = 'name.given';
+
+            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
+            console.log(result1);
+            expect(result1).toStrictEqual(['PATIENT1']);
+        });
         test('test 2', async () => {
             // Your FHIR JSON object
             const fhirJsonObject = {

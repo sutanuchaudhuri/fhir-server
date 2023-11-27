@@ -226,6 +226,27 @@ class DeidentificationManager {
         // Start the traversal with the full resource and the path parts
         return traverse({currentField: resource, pathParts: parts, elementType1: elementType});
     }
+
+    /**
+     *
+     * @param {Object} node
+     * @param {string} nodeType
+     * @returns {Object[]}
+     */
+    findNodeByType(node, nodeType) {
+        if (Array.isArray(node)) {
+            return node.flatMap(item => this.findNodeByType(item, nodeType))
+                .filter(item => item !== undefined && !(Array.isArray(item) && item.length === 0));
+        } else if (typeof node === 'object' && node !== null) {
+            if (node.constructor.name === nodeType) {
+                return [node];
+            }
+            return Object.keys(node).flatMap(key => this.findNodeByType(node[`${key}`], nodeType))
+                .filter(item => item !== undefined && !(Array.isArray(item) && item.length === 0));
+        } else {
+            return undefined;
+        }
+    }
 }
 
 module.exports = {
