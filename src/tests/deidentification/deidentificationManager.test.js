@@ -9,46 +9,7 @@ const fhirpath = require('fhirpath');
 const fhirpath_r4_model = require('fhirpath/fhir-context/r4');
 
 describe('deindentificationManager Tests', () => {
-    describe('deindentificationManager Tests', () => {
-        test('test 1', async () => {
-            // Your FHIR JSON object
-            const fhirJsonObject = {
-                resourceType: 'Patient',
-                name: [
-                    {
-                        given: ['subject']
-                    }
-                ]
-            };
-
-            // Your FHIRPath expression
-            const fhirPathExpression = 'Patient.name.given';
-            // const fhirPathExpression = 'name.given';
-
-            const result1 = new DeidentificationManager().findField(fhirPathExpression, fhirJsonObject);
-            console.log(result1);
-
-        });
-        test('test for given name with full resource', async () => {
-
-            // Your FHIRPath expression
-            const fhirPathExpression = 'Patient.name.given';
-            // const fhirPathExpression = 'name.given';
-
-            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
-            console.log(result1);
-            expect(result1).toStrictEqual([['SHYLA']]);
-        });
-        test('test for family with full resource', async () => {
-
-            // Your FHIRPath expression
-            const fhirPathExpression = 'Patient.name.family';
-            // const fhirPathExpression = 'name.given';
-
-            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
-            console.log(result1);
-            expect(result1).toStrictEqual(['PATIENT1']);
-        });
+    describe('test findNodeByType', () => {
         test('test findNodeByType for HumanName', async () => {
             const result1 = new DeidentificationManager().findNodeByType(new Patient(patient), 'HumanName');
             console.log(result1);
@@ -68,6 +29,28 @@ describe('deindentificationManager Tests', () => {
             console.log(result1);
             expect(result1.length).toBe(1);
             expect(result1[0].url).toStrictEqual('http://example.org/do-not-use/fhir-extensions/height');
+        });
+    });
+    describe('deindentificationManager Tests', () => {
+        test('test for given name with full resource', async () => {
+
+            // Your FHIRPath expression
+            const fhirPathExpression = 'Patient.name.given';
+            // const fhirPathExpression = 'name.given';
+
+            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
+            console.log(result1);
+            expect(result1).toStrictEqual([['SHYLA']]);
+        });
+        test('test for family with full resource', async () => {
+
+            // Your FHIRPath expression
+            const fhirPathExpression = 'Patient.name.family';
+            // const fhirPathExpression = 'name.given';
+
+            const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
+            console.log(result1);
+            expect(result1).toStrictEqual(['PATIENT1']);
         });
         test('test for nodesByType with full resource', async () => {
 
