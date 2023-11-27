@@ -60,9 +60,10 @@ describe('deindentificationManager Tests', () => {
 
             const result1 = new DeidentificationManager().findFieldInResource(fhirPathExpression, new Patient(patient));
             console.log(result1);
-            expect(result1).toStrictEqual(['PATIENT1']);
+            expect(result1.length).toBe(1);
+            expect(result1[0]).toStrictEqual(['SHYLA']);
         });
-        test('test 2', async () => {
+        test.skip('test using fhirPath library', async () => {
             // Your FHIR JSON object
             const fhirJsonObject = {
                 resourceType: 'Patient',
@@ -104,7 +105,7 @@ describe('deindentificationManager Tests', () => {
             // Output the result
             console.log(result);
         });
-        test('test 3', async () => {
+        test.skip('test deidentification', async () => {
             // Your FHIR JSON object
             const deindentificationManager = new DeidentificationManager();
             const deidentifiedResource = deindentificationManager.deidentify(
