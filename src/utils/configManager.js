@@ -505,6 +505,18 @@ class ConfigManager {
     }
 
     /**
+     * whether to enable graphql playground
+     * @returns {boolean}
+     */
+    get enableGraphQLPlayground() {
+        if (env.ENABLE_GRAPHQL_PLAYGROUND === null || env.ENABLE_GRAPHQL_PLAYGROUND === undefined) {
+            return true;
+        }
+
+        return isTrue(env.ENABLE_GRAPHQL_PLAYGROUND);
+    }
+
+    /**
      * whether to read audit event data from archive
      * @returns {boolean}
      */
@@ -531,6 +543,23 @@ class ConfigManager {
      */
     get mergeParallelChunkSize() {
         return parseInt(env.MERGE_PARALLEL_CHUNK_SIZE) || 50;
+    }
+
+    /**
+     * returns cron expression for postRequest processes
+     * @returns {string}
+     */
+    get postRequestFlushTime() {
+        // default cron expression is to run the function every 5 sec
+        return env.POST_REQUEST_FLUSH_TIME || '*/5 * * * * *';
+    }
+
+    /**
+     * returns the buffer size for post request processes
+     * @returns {number}
+     */
+    get postRequestBatchSize() {
+        return parseInt(env.POST_REQUEST_BATCH_SIZE) || 50;
     }
 }
 
