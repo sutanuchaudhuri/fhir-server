@@ -16,45 +16,19 @@ class DeidentificationManager {
      * @returns {Resource}
      */
     deidentify({resource}) {
-        this.visit(resource, ['']);
-        return resource;
-    }
-
-    /**
-     * visitor pattern
-     * @param {Object|Object[]} node
-     * @param {string[]} path
-     */
-    visit(node, path) {
-        if (Array.isArray(node)) {
-            node.forEach((item, _) => this.visit(item, path.slice(1)));
-        } else if (typeof node === 'object' && node !== null) {
-            Object.keys(node).forEach(key => {
-                const newPath = path.slice(1);
-                /**
-                 * type: string
-                 */
-                const matchingRules = this.findMatchingRules({path: newPath, node: node[`${key}`]});
-                if (matchingRules.length > 0) {
-                    node[`${key}`] = null; // Redact the node by setting it to null
-                } else {
-                    this.visit(node[`${key}`], newPath); // Continue traversal
+        for (const rule of this.config.fhirPathRules) {
+            const fields = this.findFieldInResource(rule.path, resource);
+            if (fields) {
+                for (const field of fields) {
+                    if (rule.action === 'remove') {
+                        this.removeField(field);
+                    } else if (rule.action === 'replace') {
+                        this.replaceField(field, rule.replacement);
+                    }
                 }
-            });
+            }
         }
-    }
-
-    /**
-     * Find matching rules
-     * @param {string[]} path
-     * @param {Object} node
-     * @returns {Object}
-     */
-    // eslint-disable-next-line no-unused-vars
-    findMatchingRules({path, node}) {
-        return this.config.fhirPathRules.filter(rule => {
-            return path.endsWith(rule.type);
-        });
+        return resource;
     }
 
     /**
