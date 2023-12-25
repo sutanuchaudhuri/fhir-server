@@ -116,98 +116,106 @@ class FhirStructureDefinitionParser:
         with open(fhir_xsd_all_file, "rb") as file:
             contents = file.read()
             bundle: Bundle = Bundle.parse_raw(contents, content_type="text/xml")
-            json_bundle: Dict[str, Any] = json.loads(bundle.json())
-            # print(json_bundle)
-            structure_definitions: List[Dict[str, Any]] = [
-                entry["resource"] for entry in json_bundle["entry"]
-                if entry["resource"]["resourceType"] == "StructureDefinition"
-            ]
-            # print header
-            print("id | path | cardinality | type | referenced_target_resources | value_set | binding_name")
-            for structure_definition in structure_definitions:
-                # print(structure_definition["id"])
-                snapshot: Dict[str, Any] = structure_definition["snapshot"]
-                if snapshot:
-                    resource_name = structure_definition["name"]
-                    resource_documentation: str = structure_definition["description"]
-                    fhir_properties: List[FhirProperty] = []
-                    for element in snapshot["element"]:
-                        element_id = element.get('id')
-                        element_path = element['path']
-                        element_name = element_path.split(".")[-1]
-                        cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
-                        element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
-                        if element_type == "":
-                            # base resource
-                            resource_documentation = element.get("definition") if element.get("definition") else ""
-                            continue
-                        target_profiles: Optional[List[str]] = None
-                        if element.get("type"):
-                            for type_ in element.get("type"):
-                                if type_.get("targetProfile"):
-                                    if not target_profiles:
-                                        target_profiles = []
-                                    if isinstance(type_.get("targetProfile"), list):
-                                        target_profiles.extend([t.split("/")[-1] for t in type_.get("targetProfile")])
-                                    else:
-                                        target_profiles.append(type_.get("targetProfile").split("/")[-1])
-                        referenced_target_resources: List[str] = target_profiles
-                        value_set = element.get('valueSet') if element.get('valueSet') else ""
-                        binding: Optional[Dict[str, Any]] = element.get('binding') if element.get('binding') else None
-                        binding_name: Optional[str] = None
-                        if binding and binding.get("extension"):
-                            for extension in binding.get("extension"):
-                                if extension.get("url") == "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName":
-                                    binding_name = extension.get("valueString")
+            fhir_entities.extend(self.parse(bundle=bundle))
+        return fhir_entities
 
-                        documentation: str = element.get("definition") if element.get("definition") else ""
-                        print(f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_target_resources or ''} | {value_set} | {binding_name or ''} ")
-                        property_: FhirProperty = FhirProperty(
-                            name=element_name,
-                            fhir_name=element_name,
-                            javascript_clean_name=element_name,
-                            type_=element_type,
-                            cleaned_type=element_type,
-                            type_snake_case=element_type,
-                            optional=element.get("min") == 0,
-                            is_list=element.get("max") == "*",
-                            documentation=[documentation],
-                            fhir_type=element_type,
-                            reference_target_resources=[SmartName(name=r, cleaned_name=r, snake_case_name=r) for r in referenced_target_resources] if referenced_target_resources else [],
-                            reference_target_resources_names=referenced_target_resources,
-                            is_back_bone_element=element_type == "BackboneElement",
-                            is_basic_type=False,
-                            codeable_type=None,
-                            is_resource=False,
-                            is_extension=element_type == "Extension",
-                            is_code=element_type == "code",
-                            is_complex=element_type == "complex",
-                            name_suffix=None,
-                            is_v2_supported=False
-                        )
-                        fhir_properties.append(property_)
+    def parse(self, *, bundle: Bundle) -> List[FhirEntity]:
+        fhir_entities: List[FhirEntity] = []
+        json_bundle: Dict[str, Any] = json.loads(bundle.json())
+        # print(json_bundle)
+        structure_definitions: List[Dict[str, Any]] = [
+            entry["resource"] for entry in json_bundle["entry"]
+            if entry["resource"]["resourceType"] == "StructureDefinition"
+        ]
+        # print header
+        print("id | path | cardinality | type | referenced_target_resources | value_set | binding_name")
+        for structure_definition in structure_definitions:
+            # print(structure_definition["id"])
+            snapshot: Dict[str, Any] = structure_definition["snapshot"]
+            if snapshot:
+                resource_name = structure_definition["name"]
+                resource_documentation: str = structure_definition["description"]
+                fhir_properties: List[FhirProperty] = []
+                for element in snapshot["element"]:
+                    element_id = element.get('id')
+                    element_path = element['path']
+                    element_name = element_path.split(".")[-1]
+                    cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
+                    element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
+                    if element_type == "":
+                        # base resource
+                        resource_documentation = element.get("definition") if element.get("definition") else ""
+                        continue
+                    target_profiles: Optional[List[str]] = None
+                    if element.get("type"):
+                        for type_ in element.get("type"):
+                            if type_.get("targetProfile"):
+                                if not target_profiles:
+                                    target_profiles = []
+                                if isinstance(type_.get("targetProfile"), list):
+                                    target_profiles.extend([t.split("/")[-1] for t in type_.get("targetProfile")])
+                                else:
+                                    target_profiles.append(type_.get("targetProfile").split("/")[-1])
+                    referenced_target_resources: List[str] = target_profiles
+                    value_set = element.get('valueSet') if element.get('valueSet') else ""
+                    binding: Optional[Dict[str, Any]] = element.get('binding') if element.get('binding') else None
+                    binding_name: Optional[str] = None
+                    if binding and binding.get("extension"):
+                        for extension in binding.get("extension"):
+                            if extension.get(
+                                    "url") == "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName":
+                                binding_name = extension.get("valueString")
 
-                    fhir_entity: FhirEntity = FhirEntity(
-                        fhir_name=resource_name,
-                        cleaned_name=resource_name,
-                        name_snake_case=resource_name,
-                        properties=fhir_properties,
-                        documentation=[],
-                        type_="Resource",
-                        is_back_bone_element=False,
-                        base_type=None,
-                        base_type_list=[],
-                        source="http://hl7.org/fhir/StructureDefinition/{}".format(resource_name),
-                        is_value_set=False,
-                        value_set_concepts=None,
-                        value_set_url=None,
+                    documentation: str = element.get("definition") if element.get("definition") else ""
+                    print(
+                        f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_target_resources or ''} | {value_set} | {binding_name or ''} ")
+                    property_: FhirProperty = FhirProperty(
+                        name=element_name,
+                        fhir_name=element_name,
+                        javascript_clean_name=element_name,
+                        type_=element_type,
+                        cleaned_type=element_type,
+                        type_snake_case=element_type,
+                        optional=element.get("min") == 0,
+                        is_list=element.get("max") == "*",
+                        documentation=[documentation],
+                        fhir_type=element_type,
+                        reference_target_resources=[SmartName(name=r, cleaned_name=r, snake_case_name=r) for r in
+                                                    referenced_target_resources] if referenced_target_resources else [],
+                        reference_target_resources_names=referenced_target_resources,
+                        is_back_bone_element=element_type == "BackboneElement",
                         is_basic_type=False,
-                        value_set_url_list=None,
-                        is_resource=True,
-                        is_extension=False,
-                        properties_unique=None
+                        codeable_type=None,
+                        is_resource=False,
+                        is_extension=element_type == "Extension",
+                        is_code=element_type == "code",
+                        is_complex=element_type == "complex",
+                        name_suffix=None,
+                        is_v2_supported=False
                     )
-                    fhir_entities.append(fhir_entity)
+                    fhir_properties.append(property_)
+
+                fhir_entity: FhirEntity = FhirEntity(
+                    fhir_name=resource_name,
+                    cleaned_name=resource_name,
+                    name_snake_case=resource_name,
+                    properties=fhir_properties,
+                    documentation=[],
+                    type_="Resource",
+                    is_back_bone_element=False,
+                    base_type=None,
+                    base_type_list=[],
+                    source="http://hl7.org/fhir/StructureDefinition/{}".format(resource_name),
+                    is_value_set=False,
+                    value_set_concepts=None,
+                    value_set_url=None,
+                    is_basic_type=False,
+                    value_set_url_list=None,
+                    is_resource=True,
+                    is_extension=False,
+                    properties_unique=None
+                )
+                fhir_entities.append(fhir_entity)
         return fhir_entities
 
     def parse_non_resources(self) -> None:
