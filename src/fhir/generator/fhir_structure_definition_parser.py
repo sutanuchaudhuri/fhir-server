@@ -124,6 +124,7 @@ class FhirStructureDefinitionParser:
                 # print(structure_definition["id"])
                 snapshot: Dict[str, Any] = structure_definition["snapshot"]
                 if snapshot:
+                    resource_name = structure_definition["name"]
                     fhir_properties: List[FhirProperty] = []
                     for element in snapshot["element"]:
                         element_id = element['id']
@@ -173,6 +174,28 @@ class FhirStructureDefinitionParser:
                             is_v2_supported=False
                         )
                         fhir_properties.append(property_)
+
+                    fhir_entity: FhirEntity = FhirEntity(
+                        fhir_name=resource_name,
+                        cleaned_name=resource_name,
+                        name_snake_case=resource_name,
+                        properties=[],
+                        documentation=[],
+                        type_="Resource",
+                        is_back_bone_element=False,
+                        base_type=None,
+                        base_type_list=[],
+                        source="http://hl7.org/fhir/StructureDefinition/{}".format(resource_name),
+                        is_value_set=False,
+                        value_set_concepts=None,
+                        value_set_url=None,
+                        is_basic_type=False,
+                        value_set_url_list=None,
+                        is_resource=True,
+                        is_extension=False,
+                        properties_unique=None
+                    )
+                    fhir_entities.append(fhir_entity)
         return fhir_entities
 
     def parse_non_resources(self) -> None:
