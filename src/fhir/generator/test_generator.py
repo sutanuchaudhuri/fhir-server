@@ -1,10 +1,13 @@
 from pprint import pprint
 
-from src.graphql.generator.fhir_xml_schema_parser import FhirXmlSchemaParser
+from fhir_structure_definition_parser import FhirStructureDefinitionParser
 
 
 def test_generator() -> None:
-    fhir_entities = FhirXmlSchemaParser.generate_classes()
+    print()
+    # fhir_entities = FhirXmlSchemaParser.generate_classes()
+    # fhir_entities = FhirStructureDefinitionParser().parse_resources()
+    fhir_entities = FhirStructureDefinitionParser().parse_non_resources()
 
     # now print the result
     for fhir_entity in fhir_entities:
