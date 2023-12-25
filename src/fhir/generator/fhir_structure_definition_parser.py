@@ -1,9 +1,105 @@
 import json
 from pathlib import Path
+import dataclasses
+import re
+from pathlib import Path
+from typing import OrderedDict, Any, List, Union, Dict, Optional, Set
+import logging
 
+@dataclasses.dataclass
+class SmartName:
+    name: str
+    cleaned_name: str
+    snake_case_name: str
+
+
+@dataclasses.dataclass
+class FhirValueSetConcept:
+    code: str
+    display: Optional[str]
+    cleaned_display: Optional[str]
+    definition: Optional[str]
+    source: str
+    value_set_url: str
+
+
+@dataclasses.dataclass
+class FhirValueSet:
+    id_: str
+    name: str
+    fhir_name: str
+    name_snake_case: str
+    cleaned_name: str
+    concepts: List[FhirValueSetConcept]
+    url: str
+    value_set_url: str
+    value_set_url_list: Set[str]
+    documentation: List[str]
+    source: str
+
+
+@dataclasses.dataclass
+class FhirCodeableType:
+    codeable_type: str
+    path: str
+    codeable_type_url: str
+    is_codeable_concept: bool = False
+
+
+@dataclasses.dataclass
+class FhirReferenceType:
+    target_resources: List[str]
+    path: str
+
+
+@dataclasses.dataclass
+class FhirProperty:
+    name: str
+    fhir_name: str
+    javascript_clean_name: str
+    type_: str
+    cleaned_type: str
+    type_snake_case: str
+    optional: bool
+    is_list: bool
+    documentation: List[str]
+    fhir_type: Optional[str]
+    reference_target_resources: List[SmartName]
+    reference_target_resources_names: List[str]
+    is_back_bone_element: bool
+    is_basic_type: bool
+    codeable_type: Optional[SmartName]
+    is_resource: bool = False
+    is_extension: bool = False
+    is_code: bool = False
+    is_complex: bool = False
+    name_suffix: Optional[str] = None
+    is_v2_supported: bool = False
+
+
+@dataclasses.dataclass
+class FhirEntity:
+    fhir_name: str
+    cleaned_name: str
+    name_snake_case: str
+    properties: List[FhirProperty]
+    documentation: List[str]
+    type_: Optional[str]
+    is_back_bone_element: bool
+    base_type: Optional[str]
+    base_type_list: List[str]
+    source: str
+    is_value_set: bool = False
+    value_set_concepts: Optional[List[FhirValueSetConcept]] = None
+    value_set_url: Optional[str] = None
+    is_basic_type: bool = False
+    value_set_url_list: Optional[Set[str]] = None
+    is_resource: bool = False
+    is_extension: bool = False
+    properties_unique: Optional[List[FhirProperty]] = None
 
 class FhirStructureDefinitionParser:
-    def parse_resources(self) -> None:
+    def parse_resources(self) -> List[FhirEntity]:
         data_dir: Path = Path(__file__).parent.joinpath("./")
         fhir_entities: List[FhirEntity] = []
 
@@ -50,6 +146,7 @@ class FhirStructureDefinitionParser:
                                     binding_name = extension.get("valueString")
 
                         print(f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_type or ''} | {value_set} | {binding_name or ''} ")
+        return fhir_entities
 
     def parse_non_resources(self) -> None:
         data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -98,3 +195,4 @@ class FhirStructureDefinitionParser:
                                     binding_name = extension.get("valueString")
 
                         print(f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_type or ''} | {value_set} | {binding_name or ''} ")
+        return fhir_entities
