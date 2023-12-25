@@ -125,6 +125,7 @@ class FhirStructureDefinitionParser:
                 snapshot: Dict[str, Any] = structure_definition["snapshot"]
                 if snapshot:
                     resource_name = structure_definition["name"]
+                    resource_documentation: str = structure_definition["description"]
                     fhir_properties: List[FhirProperty] = []
                     for element in snapshot["element"]:
                         element_id = element['id']
@@ -132,6 +133,10 @@ class FhirStructureDefinitionParser:
                         element_name = element_path.split(".")[-1]
                         cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
                         element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
+                        if element_type == "":
+                            # base resource
+                            resource_documentation = element.get("definition") if element.get("definition") else ""
+                            continue
                         target_profiles: Optional[List[str]] = None
                         if element.get("type"):
                             for type_ in element.get("type"):
@@ -179,7 +184,7 @@ class FhirStructureDefinitionParser:
                         fhir_name=resource_name,
                         cleaned_name=resource_name,
                         name_snake_case=resource_name,
-                        properties=[],
+                        properties=fhir_properties,
                         documentation=[],
                         type_="Resource",
                         is_back_bone_element=False,
