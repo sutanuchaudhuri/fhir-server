@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import OrderedDict, Any, List, Union, Dict, Optional, Set
 import logging
 
+from fhir.resources.R4B.bundle import Bundle
+
+
 @dataclasses.dataclass
 class SmartName:
     name: str
@@ -105,14 +108,15 @@ class FhirStructureDefinitionParser:
 
         # first read fhir-all.xsd to get a list of resources
         fhir_xsd_all_file: Path = (
-            data_dir.joinpath("json")
-            .joinpath("definitions.json")
-            .joinpath("profiles-resources.json")
+            data_dir.joinpath("xsd")
+            .joinpath("definitions.xml")
+            .joinpath("profiles-resources.xml")
         )
 
         with open(fhir_xsd_all_file, "rb") as file:
             contents = file.read()
-            json_bundle: Dict[str, Any] = json.loads(contents)
+            bundle: Bundle = Bundle.parse_raw(contents, content_type="text/xml")
+            json_bundle: Dict[str, Any] = json.loads(bundle.json())
             # print(json_bundle)
             structure_definitions: List[Dict[str, Any]] = [
                 entry["resource"] for entry in json_bundle["entry"]
@@ -128,7 +132,7 @@ class FhirStructureDefinitionParser:
                     resource_documentation: str = structure_definition["description"]
                     fhir_properties: List[FhirProperty] = []
                     for element in snapshot["element"]:
-                        element_id = element['id']
+                        element_id = element.get('id')
                         element_path = element['path']
                         element_name = element_path.split(".")[-1]
                         cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
@@ -143,7 +147,10 @@ class FhirStructureDefinitionParser:
                                 if type_.get("targetProfile"):
                                     if not target_profiles:
                                         target_profiles = []
-                                    target_profiles.append(type_.get("targetProfile").split("/")[-1])
+                                    if isinstance(type_.get("targetProfile"), list):
+                                        target_profiles.extend([t.split("/")[-1] for t in type_.get("targetProfile")])
+                                    else:
+                                        target_profiles.append(type_.get("targetProfile").split("/")[-1])
                         referenced_target_resources: List[str] = target_profiles
                         value_set = element.get('valueSet') if element.get('valueSet') else ""
                         binding: Optional[Dict[str, Any]] = element.get('binding') if element.get('binding') else None

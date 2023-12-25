@@ -7,9 +7,11 @@ from os import path
 from pathlib import Path
 from typing import Union, List, Dict, Any
 
-from fhir_xml_schema_parser import FhirXmlSchemaParser
+# from fhir_xml_schema_parser import FhirXmlSchemaParser
 from search_parameters import search_parameter_queries
-from fhir_xml_schema_parser import FhirEntity
+# from fhir_xml_schema_parser import FhirEntity
+from fhir_structure_definition_parser import FhirEntity
+from fhir_structure_definition_parser import FhirStructureDefinitionParser
 
 
 def my_copytree(
@@ -38,10 +40,10 @@ def clean_duplicate_lines(file_path: Union[Path, str]) -> None:
     new_lines: List[str] = []
     for line in lines:
         if (
-            not line.strip() 
-            or not line.lstrip().startswith("from") 
+            not line.strip()
+            or not line.lstrip().startswith("from")
             or (
-                line not in new_lines 
+                line not in new_lines
                 and line.lstrip() not in [c.lstrip() for c in new_lines]
             )
         ):
@@ -66,7 +68,8 @@ def main() -> int:
     if os.path.exists(complexTypeIndexFilePath):
         os.remove(complexTypeIndexFilePath)
 
-    fhir_entities: List[FhirEntity] = [f for f in FhirXmlSchemaParser.generate_classes() if f.is_resource]
+    resources = FhirStructureDefinitionParser().parse_resources()
+    fhir_entities: List[FhirEntity] = [f for f in resources if f.is_resource]
 
     with open(data_dir.joinpath("template.javascript.class.index.jinja2"), "r") as file:
         template_contents = file.read()
@@ -83,7 +86,7 @@ def main() -> int:
         with open(file_path, "w") as file2:
             file2.write(result)
 
-    fhir_entities: List[FhirEntity] = [f for f in FhirXmlSchemaParser.generate_classes()
+    fhir_entities: List[FhirEntity] = [f for f in resources
                                        if f.type_ == "Element" and f.cleaned_name != "Resource"]
 
     with open(data_dir.joinpath("template.javascript.class.index.jinja2"), "r") as file:
