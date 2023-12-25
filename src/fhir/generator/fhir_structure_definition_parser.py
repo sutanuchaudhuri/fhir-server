@@ -119,14 +119,16 @@ class FhirStructureDefinitionParser:
                 if entry["resource"]["resourceType"] == "StructureDefinition"
             ]
             # print header
-            print("id | path | cardinality | type | referenced_type | value_set | binding_name")
+            print("id | path | cardinality | type | referenced_target_resources | value_set | binding_name")
             for structure_definition in structure_definitions:
                 # print(structure_definition["id"])
                 snapshot: Dict[str, Any] = structure_definition["snapshot"]
                 if snapshot:
+                    fhir_properties: List[FhirProperty] = []
                     for element in snapshot["element"]:
                         element_id = element['id']
                         element_path = element['path']
+                        element_name = element_path.split(".")[-1]
                         cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
                         element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
                         target_profiles: Optional[List[str]] = None
@@ -136,7 +138,7 @@ class FhirStructureDefinitionParser:
                                     if not target_profiles:
                                         target_profiles = []
                                     target_profiles.append(type_.get("targetProfile").split("/")[-1])
-                        referenced_type: List[str] = target_profiles
+                        referenced_target_resources: List[str] = target_profiles
                         value_set = element.get('valueSet') if element.get('valueSet') else ""
                         binding: Optional[Dict[str, Any]] = element.get('binding') if element.get('binding') else None
                         binding_name: Optional[str] = None
@@ -145,7 +147,32 @@ class FhirStructureDefinitionParser:
                                 if extension.get("url") == "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName":
                                     binding_name = extension.get("valueString")
 
-                        print(f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_type or ''} | {value_set} | {binding_name or ''} ")
+                        documentation: str = element.get("definition") if element.get("definition") else ""
+                        print(f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_target_resources or ''} | {value_set} | {binding_name or ''} ")
+                        property_: FhirProperty = FhirProperty(
+                            name=element_name,
+                            fhir_name=element_name,
+                            javascript_clean_name=element_name,
+                            type_=element_type,
+                            cleaned_type=element_type,
+                            type_snake_case=element_type,
+                            optional=element.get("min") == 0,
+                            is_list=element.get("max") == "*",
+                            documentation=[documentation],
+                            fhir_type=element_type,
+                            reference_target_resources=[SmartName(name=r, cleaned_name=r, snake_case_name=r) for r in referenced_target_resources] if referenced_target_resources else [],
+                            reference_target_resources_names=referenced_target_resources,
+                            is_back_bone_element=element_type == "BackboneElement",
+                            is_basic_type=False,
+                            codeable_type=None,
+                            is_resource=False,
+                            is_extension=element_type == "Extension",
+                            is_code=element_type == "code",
+                            is_complex=element_type == "complex",
+                            name_suffix=None,
+                            is_v2_supported=False
+                        )
+                        fhir_properties.append(property_)
         return fhir_entities
 
     def parse_non_resources(self) -> None:
