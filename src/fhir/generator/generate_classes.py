@@ -7,9 +7,9 @@ from os import path
 from pathlib import Path
 from typing import Union, List, Dict, Any
 
-from fhir_xml_schema_parser import FhirXmlSchemaParser
 from search_parameters import search_parameter_queries
-from fhir_xml_schema_parser import FhirEntity
+from fhir_structure_definition_parser import FhirEntity
+from fhir_structure_definition_parser import FhirStructureDefinitionParser
 
 
 def my_copytree(
@@ -71,7 +71,7 @@ def main() -> int:
         shutil.rmtree(classes_backbone_elements_folder)
     os.mkdir(classes_backbone_elements_folder)
 
-    fhir_entities: List[FhirEntity] = FhirXmlSchemaParser.generate_classes()
+    fhir_entities: List[FhirEntity] = FhirStructureDefinitionParser().parse_all()
 
     # now print the result
     for fhir_entity in fhir_entities:

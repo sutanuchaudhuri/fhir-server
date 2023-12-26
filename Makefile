@@ -168,6 +168,7 @@ graphql:
 .PHONY:classes
 classes:
 	. ${NVM_DIR}/nvm.sh && nvm use && \
+	docker run --rm -it --name pythongenerator --mount type=bind,source="${PWD}"/src,target=/src python:3.8-slim-buster sh -c "pip install fhir.resources[xml] lxml jinja2 && python3 src/fhir/generator/generate_classes.py" && \
 	docker run --rm -it --name pythongenerator --mount type=bind,source="${PWD}"/src,target=/src python:3.8-slim-buster sh -c "pip install fhir.resources[xml] lxml jinja2 && python3 src/fhir/generator/generate_classes_index.py" && \
 	eslint --fix "src/fhir/classes/**/*.js"
 
