@@ -68,7 +68,7 @@ def main() -> int:
     if os.path.exists(complexTypeIndexFilePath):
         os.remove(complexTypeIndexFilePath)
 
-    resources = FhirStructureDefinitionParser().parse_resources()
+    resources = FhirStructureDefinitionParser().parse_all()
     fhir_entities: List[FhirEntity] = [f for f in resources if f.is_resource]
 
     with open(data_dir.joinpath("template.javascript.class.index.jinja2"), "r") as file:

@@ -158,6 +158,7 @@ class FhirStructureDefinitionParser:
             if snapshot:
                 resource_name = structure_definition["name"]
                 resource_documentation: str = structure_definition["description"]
+                resource_kind: str = structure_definition["kind"]
                 fhir_properties: List[FhirProperty] = []
                 for element in snapshot["element"]:
                     element_id = element.get('id')
@@ -224,7 +225,7 @@ class FhirStructureDefinitionParser:
                     name_snake_case=resource_name,
                     properties=fhir_properties,
                     documentation=[],
-                    type_="Resource",
+                    type_="Resource" if resource_kind == "resource" else "Element" if resource_kind == "complex-type" else None,
                     is_back_bone_element=False,
                     base_type=None,
                     base_type_list=[],
@@ -234,7 +235,7 @@ class FhirStructureDefinitionParser:
                     value_set_url=None,
                     is_basic_type=False,
                     value_set_url_list=None,
-                    is_resource=True,
+                    is_resource=resource_kind == "resource",
                     is_extension=False,
                     properties_unique=None
                 )
