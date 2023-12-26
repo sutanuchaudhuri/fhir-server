@@ -185,6 +185,10 @@ class FhirStructureDefinitionParser:
                     element_name: str = element_path_parts[-1]
                     cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
                     element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
+                    if element_type == "http://hl7.org/fhirpath/System.String":
+                        element_type = "String"
+                    elif element_type == "Resource":
+                        element_type = "ResourceContainer"
                     if element_type == "":
                         # base resource
                         resource_documentation = element.get("definition") if element.get("definition") else ""
@@ -258,17 +262,20 @@ class FhirStructureDefinitionParser:
                     documentation: str = element.get("definition") if element.get("definition") else ""
                     print(
                         f"{element_id} | {element_path} | {cardinality} | {element_type} | {referenced_target_resources or ''} | {value_set} | {binding_name or ''} ")
+                    property_type: str = element_type
+                    if element_type == "BackboneElement":
+                        property_type = self.capitalize_and_append(element_path_parts)
                     property_: FhirProperty = FhirProperty(
                         name=element_name,
                         fhir_name=element_name,
                         javascript_clean_name=element_name,
-                        type_=element_type,
-                        cleaned_type=element_type,
-                        type_snake_case=element_type,
+                        type_=property_type,
+                        cleaned_type=property_type,
+                        type_snake_case=property_type,
                         optional=element.get("min") == 0,
                         is_list=element.get("max") == "*",
                         documentation=[documentation],
-                        fhir_type=element_type,
+                        fhir_type=property_type,
                         reference_target_resources=[SmartName(name=r, cleaned_name=r, snake_case_name=r) for r in
                                                     referenced_target_resources] if referenced_target_resources else [],
                         reference_target_resources_names=referenced_target_resources,
