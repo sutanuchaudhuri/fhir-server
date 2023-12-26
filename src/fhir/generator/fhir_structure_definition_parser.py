@@ -137,6 +137,23 @@ class FhirStructureDefinitionParser:
             fhir_entities.extend(self.parse_bundle(bundle=bundle))
         return fhir_entities
 
+    def parse_account(self) -> List[FhirEntity]:
+        data_dir: Path = Path(__file__).parent.joinpath("./")
+        fhir_entities: List[FhirEntity] = []
+
+        # first read fhir-all.xsd to get a list of resources
+        fhir_xsd_all_file: Path = (
+            data_dir.joinpath("xsd")
+            .joinpath("definitions.xml")
+            .joinpath("profiles-account.xml")
+        )
+
+        with open(fhir_xsd_all_file, "rb") as file:
+            contents = file.read()
+            bundle: Bundle = Bundle.parse_raw(contents, content_type="text/xml")
+            fhir_entities.extend(self.parse_bundle(bundle=bundle))
+        return fhir_entities
+
     def parse_all(self) -> List[FhirEntity]:
         fhir_entities: List[FhirEntity] = []
         fhir_entities.extend(self.parse_resources())
@@ -162,9 +179,10 @@ class FhirStructureDefinitionParser:
                 resource_kind: str = structure_definition["kind"]
 
                 for element in snapshot["element"]:
-                    element_id = element.get('id')
-                    element_path = element['path']
-                    element_name = element_path.split(".")[-1]
+                    element_id: Optional[str] = element.get('id')
+                    element_path: Optional[str] = element['path']
+                    element_path_parts: List[str] = element_path.split(".") if element_path else []
+                    element_name: str = element_path_parts[-1]
                     cardinality: str = f'{element["min"]}..{element["max"]}' if element.get("min") != None else ""
                     element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
                     if element_type == "":
@@ -263,16 +281,26 @@ class FhirStructureDefinitionParser:
                         name_suffix=None,
                         is_v2_supported=False
                     )
-                    # find the parent entity
-                    parent_element_path: str = ".".join(element_path.split(".")[:-1])
-                    if parent_element_path:
-                        parent_entities: List[FhirEntity] = [
-                            f for f in fhir_entities if f.path == parent_element_path
-                        ]
-                        # assert len(parent_entities) > 0, f"Could not find parent entity {parent_element_path} for {element_path}"
-                        if len(parent_entities) > 1:
-                            parent_entity: FhirEntity = parent_entities[0]
-                            if parent_entity:
-                                parent_entity.properties.append(property_)
 
+                    if element_type == "":
+                        # top level resource
+                        pass
+                    # elif len(element_path_parts) < 2:
+                        # # non-nested property
+                        # # this is a resource
+                        # fhir_entity.properties.append(property_)
+                    else:
+                        # find the parent entity
+                        parent_element_path: str = ".".join(element_path_parts[:-1])
+                        if parent_element_path:
+                            parent_entities: List[FhirEntity] = [
+                                f for f in fhir_entities if f.path == parent_element_path
+                            ]
+                            # assert len(parent_entities) > 0, f"Could not find parent entity {parent_element_path} for {element_path}"
+                            if len(parent_entities) > 0:
+                                parent_entity: FhirEntity = parent_entities[0]
+                                if parent_entity:
+                                    parent_entity.properties.append(property_)
+                        else:
+                            print(f"Could not find parent entity {parent_element_path} for {element_path}")
         return fhir_entities
