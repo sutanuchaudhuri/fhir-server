@@ -277,7 +277,7 @@ class FhirStructureDefinitionParser:
                         optional=element.get("min") == 0,
                         is_list=element.get("max") == "*",
                         documentation=[documentation],
-                        fhir_type=property_type,
+                        fhir_type=element_type,
                         reference_target_resources=[SmartName(name=r, cleaned_name=r, snake_case_name=r) for r in
                                                     referenced_target_resources] if referenced_target_resources else [],
                         reference_target_resources_names=referenced_target_resources,
