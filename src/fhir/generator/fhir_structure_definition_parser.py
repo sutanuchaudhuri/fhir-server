@@ -187,6 +187,8 @@ class FhirStructureDefinitionParser:
                     element_type: str = element.get("type")[0].get("code") if element.get("type") else ""
                     if element_type == "http://hl7.org/fhirpath/System.String":
                         element_type = "String"
+                    elif element_type == "string":
+                        element_type = "String"
                     elif element_type == "Resource":
                         element_type = "ResourceContainer"
                     if element_type == "":
