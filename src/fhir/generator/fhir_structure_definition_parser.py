@@ -287,7 +287,7 @@ class FhirStructureDefinitionParser:
                         is_resource=False,
                         is_extension=element_type == "Extension",
                         is_code=element_type == "code",
-                        is_complex=element_type == "complex",
+                        is_complex=self.is_complex_type(element_type),
                         name_suffix=None,
                         is_v2_supported=False
                     )
@@ -317,3 +317,6 @@ class FhirStructureDefinitionParser:
 
     def capitalize_and_append(self, parts: List[str]) -> str:
         return ''.join(part.capitalize() for part in parts)
+
+    def is_complex_type(self, type_: str) -> bool:
+        return type_.lower() not in ["string", "boolean", "integer", "decimal", "uri", "base64binary", "instant", "date", "code"]
