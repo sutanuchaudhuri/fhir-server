@@ -82,6 +82,7 @@ class FhirProperty:
 
 @dataclasses.dataclass
 class FhirEntity:
+    path: str
     fhir_name: str
     cleaned_name: str
     name_snake_case: str
@@ -159,7 +160,7 @@ class FhirStructureDefinitionParser:
                 resource_name = structure_definition["name"]
                 resource_documentation: str = structure_definition["description"]
                 resource_kind: str = structure_definition["kind"]
-                fhir_properties: List[FhirProperty] = []
+
                 for element in snapshot["element"]:
                     element_id = element.get('id')
                     element_path = element['path']
@@ -169,7 +170,52 @@ class FhirStructureDefinitionParser:
                     if element_type == "":
                         # base resource
                         resource_documentation = element.get("definition") if element.get("definition") else ""
-                        continue
+                        fhir_entity: FhirEntity = FhirEntity(
+                            path=element_path,
+                            fhir_name=resource_name,
+                            cleaned_name=resource_name,
+                            name_snake_case=resource_name,
+                            properties=[],
+                            documentation=[],
+                            type_="Resource" if resource_kind == "resource" else "Element" if resource_kind == "complex-type" else None,
+                            is_back_bone_element=False,
+                            base_type=None,
+                            base_type_list=[],
+                            source="http://hl7.org/fhir/StructureDefinition/{}".format(resource_name),
+                            is_value_set=False,
+                            value_set_concepts=None,
+                            value_set_url=None,
+                            is_basic_type=False,
+                            value_set_url_list=None,
+                            is_resource=resource_kind == "resource",
+                            is_extension=False,
+                            properties_unique=None
+                        )
+                        fhir_entities.append(fhir_entity)
+                    elif element_type == "BackboneElement":
+                        fhir_entity: FhirEntity = FhirEntity(
+                            path=element_path,
+                            fhir_name=element_name,
+                            cleaned_name=element_name,
+                            name_snake_case=element_name,
+                            properties=[],
+                            documentation=[],
+                            type_=element_type,
+                            is_back_bone_element=False,
+                            base_type=None,
+                            base_type_list=[],
+                            source="http://hl7.org/fhir/StructureDefinition/{}".format(element_type),
+                            is_value_set=False,
+                            value_set_concepts=None,
+                            value_set_url=None,
+                            is_basic_type=False,
+                            value_set_url_list=None,
+                            is_resource=False,
+                            is_extension=False,
+                            properties_unique=None
+                        )
+                        fhir_entities.append(fhir_entity)
+
                     target_profiles: Optional[List[str]] = None
                     if element.get("type"):
                         for type_ in element.get("type"):
@@ -217,27 +263,16 @@ class FhirStructureDefinitionParser:
                         name_suffix=None,
                         is_v2_supported=False
                     )
-                    fhir_properties.append(property_)
+                    # find the parent entity
+                    parent_element_path: str = ".".join(element_path.split(".")[:-1])
+                    if parent_element_path:
+                        parent_entities: List[FhirEntity] = [
+                            f for f in fhir_entities if f.path == parent_element_path
+                        ]
+                        # assert len(parent_entities) > 0, f"Could not find parent entity {parent_element_path} for {element_path}"
+                        if len(parent_entities) > 1:
+                            parent_entity: FhirEntity = parent_entities[0]
+                            if parent_entity:
+                                parent_entity.properties.append(property_)
 
-                fhir_entity: FhirEntity = FhirEntity(
-                    fhir_name=resource_name,
-                    cleaned_name=resource_name,
-                    name_snake_case=resource_name,
-                    properties=fhir_properties,
-                    documentation=[],
-                    type_="Resource" if resource_kind == "resource" else "Element" if resource_kind == "complex-type" else None,
-                    is_back_bone_element=False,
-                    base_type=None,
-                    base_type_list=[],
-                    source="http://hl7.org/fhir/StructureDefinition/{}".format(resource_name),
-                    is_value_set=False,
-                    value_set_concepts=None,
-                    value_set_url=None,
-                    is_basic_type=False,
-                    value_set_url_list=None,
-                    is_resource=resource_kind == "resource",
-                    is_extension=False,
-                    properties_unique=None
-                )
-                fhir_entities.append(fhir_entity)
         return fhir_entities
