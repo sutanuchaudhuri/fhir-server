@@ -211,11 +211,12 @@ class FhirStructureDefinitionParser:
                         )
                         fhir_entities.append(fhir_entity)
                     elif element_type == "BackboneElement":
+                        backbone_element_name: str = self.capitalize_and_append(element_path_parts)
                         fhir_entity: FhirEntity = FhirEntity(
                             path=element_path,
-                            fhir_name=element_name,
-                            cleaned_name=element_name,
-                            name_snake_case=element_name,
+                            fhir_name=backbone_element_name,
+                            cleaned_name=backbone_element_name,
+                            name_snake_case=backbone_element_name,
                             properties=[],
                             documentation=[],
                             type_=element_type,
@@ -304,3 +305,6 @@ class FhirStructureDefinitionParser:
                         else:
                             print(f"Could not find parent entity {parent_element_path} for {element_path}")
         return fhir_entities
+
+    def capitalize_and_append(self, parts: List[str]) -> str:
+        return ''.join(part.capitalize() for part in parts)
