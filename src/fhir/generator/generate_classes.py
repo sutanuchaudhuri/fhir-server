@@ -78,6 +78,7 @@ def main() -> int:
         # use template to generate new code files
         resource_name: str = fhir_entity.cleaned_name
         entity_file_name = fhir_entity.name_snake_case
+        template_path = data_dir.joinpath("template.javascript.class.jinja2")
         if fhir_entity.is_value_set:  # valueset
             pass
 
@@ -89,7 +90,7 @@ def main() -> int:
                 search_parameter_queries.get(fhir_entity.fhir_name, {})
             )
             # write Javascript classes
-            with open(data_dir.joinpath("template.javascript.class.jinja2"), "r") as file:
+            with open(template_path, "r") as file:
                 template_contents = file.read()
                 from jinja2 import Template
 
@@ -125,7 +126,7 @@ def main() -> int:
                 with open(file_path, "w") as file2:
                     file2.write(result)
         elif fhir_entity.type_ == "BackboneElement" or fhir_entity.is_back_bone_element:
-            with open(data_dir.joinpath("template.javascript.class.jinja2"), "r") as file:
+            with open(template_path, "r") as file:
                 template_contents = file.read()
                 from jinja2 import Template
 
@@ -142,7 +143,7 @@ def main() -> int:
                     file2.write(result)
         elif fhir_entity.is_extension:  # valueset
             # write Javascript classes
-            with open(data_dir.joinpath("template.javascript.class.jinja2"), "r") as file:
+            with open(template_path, "r") as file:
                 template_contents = file.read()
                 from jinja2 import Template
 
@@ -159,7 +160,7 @@ def main() -> int:
                     file2.write(result)
         elif fhir_entity.type_ == "Element":  # valueset
             # write Javascript classes
-            with open(data_dir.joinpath("template.javascript.class.jinja2"), "r") as file:
+            with open(template_path, "r") as file:
                 template_contents = file.read()
                 from jinja2 import Template
 
@@ -197,7 +198,7 @@ def main() -> int:
                 with open(file_path, "w") as file2:
                     file2.write(result)
         elif fhir_entity.type_ in ["Quantity"]:  # valueset
-            with open(data_dir.joinpath("template.javascript.class.jinja2"), "r") as file:
+            with open(template_path, "r") as file:
                 template_contents = file.read()
                 from jinja2 import Template
 
