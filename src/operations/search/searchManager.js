@@ -28,9 +28,12 @@ const {QueryItem} = require('../graph/queryItem');
 const {DatabaseAttachmentManager} = require('../../dataLayer/databaseAttachmentManager');
 const {FhirResourceWriterFactory} = require('../streaming/resourceWriters/fhirResourceWriterFactory');
 const {MongoReadableStream} = require('../streaming/mongoStreamReader');
-const {ConsentManager} = require('../search/consentManger');
+const {ProaConsentManager} = require('./proaConsentManager');
+const {DataSharingManager} = require('./dataSharingManager');
 const {SearchQueryBuilder} = require('./searchQueryBuilder');
 const { MongoQuerySimplifier } = require('../../utils/mongoQuerySimplifier');
+const { getResource } = require('../../operations/common/getResource');
+const { VERSIONS } = require('../../middleware/fhir/utils/constants');
 
 class SearchManager {
     /**
@@ -47,7 +50,8 @@ class SearchManager {
      * @param {ScopesManager} scopesManager
      * @param {DatabaseAttachmentManager} databaseAttachmentManager
      * @param {FhirResourceWriterFactory} fhirResourceWriterFactory
-     * @param {ConsentManager} consentManager
+     * @param {ProaConsentManager} proaConsentManager
+     * @param {DataSharingManager} dataSharingManager
      * @param {SearchQueryBuilder} searchQueryBuilder
      */
     constructor(
@@ -64,8 +68,9 @@ class SearchManager {
             scopesManager,
             databaseAttachmentManager,
             fhirResourceWriterFactory,
-            consentManager,
-            searchQueryBuilder
+            proaConsentManager,
+            dataSharingManager,
+            searchQueryBuilder,
         }
     ) {
         /**
@@ -135,16 +140,23 @@ class SearchManager {
         assertTypeEquals(fhirResourceWriterFactory, FhirResourceWriterFactory);
 
         /**
-         * @type {ConsentManager}
+         * @type {ProaConsentManager}
          */
-        this.consentManager = consentManager;
-        assertTypeEquals(consentManager, ConsentManager);
+        this.proaConsentManager = proaConsentManager;
+        assertTypeEquals(proaConsentManager, ProaConsentManager);
+
+        /**
+         * @type {DataSharingManager}
+         */
+        this.dataSharingManager = dataSharingManager;
+        assertTypeEquals(dataSharingManager, DataSharingManager);
 
         /**
          * @type {SearchQueryBuilder}
          */
         this.searchQueryBuilder = searchQueryBuilder;
         assertTypeEquals(searchQueryBuilder, SearchQueryBuilder);
+
     }
 
     // noinspection ExceptionCaughtLocallyJS
@@ -171,6 +183,7 @@ class SearchManager {
             resourceType,
             useAccessIndex,
             personIdFromJwtToken,
+            requestId,
             parsedArgs,
             useHistoryTable,
             operation
@@ -217,15 +230,15 @@ class SearchManager {
                     resourceType, securityTags, query, useAccessIndex
                 });
 
-                // Update Query for Consent based data access
-                if (this.configManager.enableConsentedDataAccess) {
-                    query = await this.consentManager.getQueryForPatientsWithConsent({
+                if (this.configManager.enableConsentedProaDataAccess || this.configManager.enableHIETreatmentRelatedDataAccess) {
+                    query = await this.dataSharingManager.updateQueryConsideringDataSharing({
                         base_version,
                         resourceType,
                         parsedArgs,
                         securityTags,
                         query,
-                        useHistoryTable
+                        useHistoryTable,
+                        requestId
                     });
                 }
             }
@@ -633,8 +646,20 @@ class SearchManager {
              * @type {import('mongodb').Document}
              */
             const projection = {};
+            /**
+             * @type {import('../../fhir/classes/4_0_0/resources/resource')}
+             */
+            const Resource = getResource(VERSIONS['4_0_0'], resourceType);
+            /**
+             * @type {string[]}
+             */
+            const allowedProperties = Object.getOwnPropertyNames(new Resource({}));
             for (const property of properties_to_return_list) {
-                projection[`${property}`] = 1;
+                if (allowedProperties.includes(property)) {
+                    projection[`${property}`] = 1;
+                } else {
+                    throw new BadRequestError(new Error(`Unsupported property '${property}' for the specified resource type.`));
+                }
             }
             // this is a hack for the CQL Evaluator since it does not request these fields but expects them
             if (resourceType === 'Library') {
@@ -1022,7 +1047,8 @@ class SearchManager {
                 fnBundle,
                 defaultSortId,
                 highWaterMark: highWaterMark,
-                configManager: this.configManager
+                configManager: this.configManager,
+                response: res
             }
         );
 
@@ -1048,6 +1074,7 @@ class SearchManager {
                 resourcePreparer: this.resourcePreparer,
                 highWaterMark: highWaterMark,
                 configManager: this.configManager,
+                response: res,
             }
         );
         /**
@@ -1072,6 +1099,7 @@ class SearchManager {
             databaseAttachmentManager: this.databaseAttachmentManager,
             highWaterMark: highWaterMark,
             configManager: this.configManager,
+            response: res,
         });
 
 

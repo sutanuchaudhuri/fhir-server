@@ -8,6 +8,7 @@ const clientPatientResource = require('./fixtures/patient/client_patient.json');
 const proaPatientResource = require('./fixtures/patient/proa_patient.json');
 const clientObservationResource = require('./fixtures/observation/client_observation.json');
 const proaObservationResource = require('./fixtures/observation/proa_observation.json');
+const nonProaObservationResource = require('./fixtures/observation/non_proa_observation.json');
 const consentGivenResource = require('./fixtures/consent/consent_given.json');
 const consentDeniedResource = require('./fixtures/consent/consent_denied.json');
 const masterPersonResource2 = require('./fixtures/person/master_person2.json');
@@ -17,6 +18,13 @@ const clientPatientResource2 = require('./fixtures/patient/client_patient2.json'
 const proaPatientResource2 = require('./fixtures/patient/proa_patient2.json');
 const proaObservationResource2 = require('./fixtures/observation/proa_observation2.json');
 const consentGivenResource2 = require('./fixtures/consent/consent_given2.json');
+
+const clientPatient3Resource = require('./fixtures/patient/client_patient3.json');
+const clientPatient4Resource = require('./fixtures/patient/client_patient4.json');
+const clientObservation1Resource = require('./fixtures/observation/client_observation1.json');
+const clientObservation2Resource = require('./fixtures/observation/client_observation2.json');
+const clientObservation3Resource = require('./fixtures/observation/client_observation3.json');
+const clientObservation4Resource = require('./fixtures/observation/client_observation4.json');
 
 // client-1 data
 const client1PersonResource = require('./fixtures/person/client_1_person.json');
@@ -114,6 +122,35 @@ describe('Consent Based Data Access Test', () => {
                 .set(headers);
             // noinspection JSUnresolvedFunction
             expect(resp).toHaveResponse([expectedProaObservationCopy, expectedClintObservationCopy]);
+        });
+
+        test('Consent has provided to Client but proa data doesnot have connection type', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, proaPatientResource, clientObservationResource, nonProaObservationResource, consentGivenResource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            let expectedClintObservationCopy = deepcopy(expectedClintObservation);
+            expectedClintObservationCopy['subject']['reference'] = 'Patient/person.08f1b73a-e27c-456d-8a61-277f164a9a57';
+            let expectedProaObservationCopy = deepcopy(expectedProaObservation);
+            expectedProaObservationCopy['subject']['reference'] = 'Patient/person.08f1b73a-e27c-456d-8a61-277f164a9a57';
+
+            // Get Observation for a specific person, client have access to read both proa and client resources
+            resp = await request
+                .get('/4_0_0/Observation?patient=Patient/person.08f1b73a-e27c-456d-8a61-277f164a9a57&_sort=_uuid')
+                .set(headers);
+
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveResponse([expectedClintObservationCopy]);
+            expect(resp.body.length).toEqual(1);
         });
 
         test('Consent has created but denied access to Client', async () => {
@@ -233,7 +270,7 @@ describe('Consent Based Data Access Test', () => {
                 .post('/4_0_0/Person/1/$merge')
                 .send([masterPersonResource, clientPersonResource, masterPatientResource,
                     client1PersonResource, client1ConsentResource, client1ObservationResource,
-                    xyzObservationResource,
+                    xyzPatientResource, xyzObservationResource,
                     clientPatientResource, proaPatientResource, clientObservationResource, proaObservationResourceCopy, consentGivenResource])
                 .set(getHeaders());
             // noinspection JSUnresolvedFunction
@@ -268,7 +305,7 @@ describe('Consent Based Data Access Test', () => {
                 .post('/4_0_0/Person/1/$merge')
                 .send([masterPersonResource, clientPersonResource, masterPatientResource,
                     client1PersonResource, client1ConsentResource, client1ObservationResource,
-                    xyzObservationResource,
+                    xyzPatientResource, xyzObservationResource,
                     clientPatientResource, proaPatientResource, clientObservationResource, proaObservationResourceCopy])
                 .set(getHeaders());
             // noinspection JSUnresolvedFunction
@@ -329,9 +366,7 @@ describe('Consent Based Data Access Test', () => {
                 .post('/4_0_0/Person/1/$merge')
                 .send([masterPersonResource,
                     client1PersonResource, client1ConsentResource, client1ObservationResource,
-                    xyzObservationResource,
-                    highmarkPatientResource,
-                    highmarkObservationResource
+                    xyzPatientResource, xyzObservationResource, highmarkPatientResource, highmarkObservationResource
                 ])
                 .set(getHeaders());
             // noinspection JSUnresolvedFunction
@@ -342,7 +377,6 @@ describe('Consent Based Data Access Test', () => {
                 .get('/4_0_0/Observation?patient=Patient/69e5e0ca-27dd-4560-9963-590e6ca4abd3,Patient/0afee0eb-4984-46ea-8052-63fad42e4817|xyz,Patient/44001f52-99f5-4246-9c9a-d7ed1c1c8b39&_sort=_uuid')
                 .set(client1Headers);
             // noinspection JSUnresolvedFunction
-            // console.log(JSON.stringify(JSON.parse(resp.text), null, '\t'));
             expect(resp).toHaveResponse([expectedClient1Observation, expectedXyzObservationJson, expectedHighMarkObservationJson]);
         });
 
@@ -429,8 +463,8 @@ describe('Consent Based Data Access Test', () => {
             const patientIds = JSON.parse(resp.text).map((r) => r.id);
 
             resp = await request
-                 .get(`/4_0_0/Observation/?patient=${patientIds.map(id => `Patient/${id}`).join(',')}`)
-                 .set(client1Headers);
+                .get(`/4_0_0/Observation/?patient=${patientIds.map(id => `Patient/${id}`).join(',')}`)
+                .set(client1Headers);
 
             expect(resp).toHaveResponse([expectedClient1Observation, expectedXyzObservationJson, expectedHighMarkObservationJson]);
         });
@@ -440,16 +474,15 @@ describe('Consent Based Data Access Test', () => {
                 return c;
             });
 
-            // Update proa resouce to use proxy patient as reference
+            // Update proa resource to use proxy patient as reference
             let proaObservationResourceCopy = deepcopy(proaObservationResource);
 
             // Add the resources to FHIR server
             let resp = await request
                 .post('/4_0_0/Person/1/$merge')
-                .send([masterPersonResource, clientPersonResource, masterPatientResource,
-                    client1PersonResource, client1ConsentResource, client1ObservationResource,
-                    xyzObservationResource,
-                    clientPatientResource, proaPatientResource, clientObservationResource, proaObservationResourceCopy, consentGivenResource])
+                .send([masterPersonResource, clientPersonResource, masterPatientResource, client1PersonResource,
+                    client1ConsentResource, client1ObservationResource, xyzObservationResource, clientPatientResource,
+                    proaPatientResource, clientObservationResource, proaObservationResourceCopy, consentGivenResource])
                 .set(getHeaders());
             // noinspection JSUnresolvedFunction
             expect(resp).toHaveMergeResponse({created: true});
@@ -460,6 +493,130 @@ describe('Consent Based Data Access Test', () => {
                 .set(headers);
             // noinspection JSUnresolvedFunction
             expect(resp).toHaveResponse(expectedObservationAndConsentQueryWithoutProxyPatient);
+        });
+
+        test('Ref of client patient(uuid): Fetch observation having reference to patient as UUID', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, clientObservationResource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            // Get Observation for a specific person
+            resp = await request
+                .get('/4_0_0/Observation?patient=Patient/bb7862e6-b7ac-470e-bde3-e85cee9d1ce6')
+                .set(headers);
+            const respIds = resp.body.map(item => item.id);
+
+            expect(respIds.length).toEqual(1);
+            expect(respIds).toEqual(expect.arrayContaining([clientObservationResource.id]));
+        });
+
+        test('Ref of client patient3(uuid): Fetch observations having reference to patient as id & uuid', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, clientObservationResource, clientPatient3Resource, clientPatient4Resource,
+                    clientObservation1Resource, clientObservation2Resource, clientObservation3Resource, clientObservation4Resource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            // Get Observation for a specific person
+            resp = await request
+                .get('/4_0_0/observation?patient=Patient/785884f1-22fa-5e8a-9fab-27a082546ebf')
+                .set(headers);
+            const respIds = resp.body.map(item => item.id);
+
+            expect(respIds.length).toEqual(2);
+            expect(respIds).toEqual(expect.arrayContaining([clientObservation3Resource.id, clientObservation4Resource.id]));
+        });
+
+        test('Ref of client patient3(id): Fetch observations having reference to patient as id only', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, clientObservationResource, clientPatient3Resource, clientPatient4Resource,
+                    clientObservation1Resource, clientObservation2Resource, clientObservation3Resource, clientObservation4Resource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            // Get Observation for a specific person
+            resp = await request
+                .get('/4_0_0/observation?patient=Patient/8899')
+                .set(headers);
+            const respIds = resp.body.map(item => item.id);
+
+            expect(respIds.length).toEqual(1);
+            expect(respIds).toEqual([clientObservation3Resource.id]);
+        });
+
+        test('Ref of client patient4(uuid): Fetch observations having reference to patient as id & uuid', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, clientObservationResource, clientPatient3Resource, clientPatient4Resource,
+                    clientObservation1Resource, clientObservation2Resource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            // Get Observation for a specific person
+            resp = await request
+                .get('/4_0_0/observation?patient=Patient/7a81f87f-d358-593f-bf6f-908dbb0cb26b')
+                .set(headers);
+            const respIds = resp.body.map(item => item.id);
+
+            expect(respIds.length).toEqual(2);
+            expect(respIds).toEqual(expect.arrayContaining([clientObservation1Resource.id, clientObservation2Resource.id]));
+        });
+
+        test('Ref of client patient4(id): Fetch observations having reference to patient as id only', async () => {
+            const request = await createTestRequest((c) => {
+                return c;
+            });
+
+            // Add the resources to FHIR server
+            let resp = await request
+                .post('/4_0_0/Person/1/$merge')
+                .send([masterPersonResource, clientPersonResource, masterPatientResource,
+                    clientPatientResource, clientObservationResource, clientPatient3Resource, clientPatient4Resource,
+                    clientObservation1Resource, clientObservation2Resource])
+                .set(getHeaders());
+            // noinspection JSUnresolvedFunction
+            expect(resp).toHaveMergeResponse({created: true});
+
+            // Get Observation for a specific person
+            resp = await request
+                .get('/4_0_0/observation?patient=Patient/88999')
+                .set(headers);
+            const respIds = resp.body.map(item => item.id);
+
+            expect(respIds.length).toEqual(1);
+            expect(respIds).toEqual([clientObservation1Resource.id]);
         });
     });
 });

@@ -319,6 +319,7 @@ class GraphHelper {
                 resourceType,
                 useAccessIndex,
                 personIdFromJwtToken: requestInfo.personIdFromJwtToken,
+                requestId: requestInfo.requestId,
                 parsedArgs: childParseArgs,
                 operation: READ
             });
@@ -562,6 +563,7 @@ class GraphHelper {
                     resourceType: relatedResourceType,
                     useAccessIndex,
                     personIdFromJwtToken: requestInfo.personIdFromJwtToken,
+                    requestId: requestInfo.requestId,
                     parsedArgs: relatedResourceParsedArgs,
                     operation: READ
                 }
@@ -1263,6 +1265,7 @@ class GraphHelper {
                 resourceType,
                 useAccessIndex: this.configManager.useAccessIndex,
                 personIdFromJwtToken: requestInfo.personIdFromJwtToken,
+                requestId: requestInfo.requestId,
                 parsedArgs,
                 operation: READ
             });
@@ -1450,15 +1453,15 @@ class GraphHelper {
                         );
                     }
                 }
-                /**
-                 * @type {string[]}
-                 */
-                const accessCodes = this.scopesManager.getAccessCodesFromScopes('read', requestInfo.user, requestInfo.scope);
-                bundleEntriesForTopLevelResource = bundleEntriesForTopLevelResource.filter(
-                    e => this.scopesManager.doesResourceHaveAnyAccessCodeFromThisList(
-                        accessCodes, requestInfo.user, requestInfo.scope, e.resource
-                    )
-                );
+                // /**
+                //  * @type {string[]}
+                //  */
+                // const accessCodes = this.scopesManager.getAccessCodesFromScopes('read', requestInfo.user, requestInfo.scope);
+                // bundleEntriesForTopLevelResource = bundleEntriesForTopLevelResource.filter(
+                //     e => this.scopesManager.doesResourceHaveAnyAccessCodeFromThisList(
+                //         accessCodes, requestInfo.user, requestInfo.scope, e.resource
+                //     )
+                // );
 
                 if (responseStreamer) {
                     for (const bundleEntry1 of bundleEntriesForTopLevelResource) {
@@ -1773,7 +1776,7 @@ class GraphHelper {
                     resource: FhirResourceCreator.create({
                         id: resource.id,
                         _uuid: resource._uuid,
-                        resourceType: resultResourceType
+                        ['resourceType']: resultResourceType
                     }, ResourceContainer),
                     request: new BundleRequest(
                         {

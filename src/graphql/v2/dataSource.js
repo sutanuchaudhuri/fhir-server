@@ -90,7 +90,7 @@ class FhirDataSource {
                 resourceType,
                 /** @type {string} */
                 id,
-            } = ResourceWithId.getResourceTypeAndIdFromReference(key);
+            } = ResourceWithId.getResourceTypeAndIdFromReference(key) || {};
             /**
              * resources with this resourceType and id
              * @type {Resource[]}
@@ -135,6 +135,10 @@ class FhirDataSource {
                         /** @type {string[]} **/
                         references,
                     ] = groupKeysByResourceTypeKey;
+
+                    if (!resourceType) {
+                        return [];
+                    }
                     /**
                      * @type {string[]}
                      */
@@ -209,8 +213,12 @@ class FhirDataSource {
         }
         if (!reference.reference) {
             let possibleResourceType = reference.type;
-            if (!possibleResourceType && info.returnType && info.returnType._types && info.returnType._types.length > 0) {
-                possibleResourceType = info.returnType._types[0].name;
+            if (!possibleResourceType && info.returnType) {
+                if (info.returnType.constructor.name === 'GraphQLList' && info.returnType.ofType && info.returnType.ofType._types && info.returnType.ofType._types.length > 0){
+                    possibleResourceType = info.returnType.ofType._types[0].name;
+                } else if (info.returnType._types && info.returnType._types.length > 0){
+                    possibleResourceType = info.returnType._types[0].name;
+                }
             }
             return this.enrichResourceWithReferenceData({}, reference, possibleResourceType);
         }
@@ -218,12 +226,16 @@ class FhirDataSource {
         const referenceValue = ['Person', 'Practitioner'].includes(
             ResourceWithId.getResourceTypeFromReference(reference.reference)
         ) ? reference.reference : (reference._uuid || reference.reference);
+        const referenceObj = ResourceWithId.getResourceTypeAndIdFromReference(referenceValue);
+        if (!referenceObj) {
+            return null;
+        }
         const {
             /** @type {string} **/
             resourceType,
             /** @type {string} **/
             id,
-        } = ResourceWithId.getResourceTypeAndIdFromReference(referenceValue);
+        } = referenceObj;
         try {
             this.createDataLoader(args);
             // noinspection JSValidateTypes

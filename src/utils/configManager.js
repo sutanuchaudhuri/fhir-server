@@ -279,8 +279,32 @@ class ConfigManager {
      * Specifies whether to Consent based data access enabled.
      * @return {boolean}
      */
-    get enableConsentedDataAccess() {
-        return isTrue(env.ENABLE_CONSENTED_DATA_ACCESS);
+    get enableConsentedProaDataAccess() {
+        return isTrue(env.ENABLE_CONSENTED_PROA_DATA_ACCESS);
+    }
+
+    /**
+     * Specifies allowed connection types for consent data sharing.
+     * @return {string[]}
+     */
+    get getConsentConnectionTypesList() {
+        return env.CONSENT_CONNECTION_TYPES_LIST ? env.CONSENT_CONNECTION_TYPES_LIST.split(',') : ['proa'];
+    }
+
+    /**
+     * Specifies whether to enable HIE/Treatment related data access.
+     * @return {boolean}
+     */
+    get enableHIETreatmentRelatedDataAccess() {
+        return isTrue(env.ENABLE_HIE_TREATMENT_RELATED_DATA_ACCESS);
+    }
+
+    /**
+     * Specifies allowed connection types for HIE/Treatment related data.
+     * @return {string[]}
+     */
+    get getHIETreatmentConnectionTypesList() {
+        return env.HIE_TREATMENT_CONNECTION_TYPES_LIST ? env.HIE_TREATMENT_CONNECTION_TYPES_LIST.split(',') : ['hipaa'];
     }
 
     /**

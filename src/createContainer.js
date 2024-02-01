@@ -74,7 +74,8 @@ const {RequestSpecificCache} = require('./utils/requestSpecificCache');
 const {PatientFilterManager} = require('./fhir/patientFilterManager');
 const {AdminPersonPatientDataManager} = require('./admin/adminPersonPatientDataManager');
 const {ProxyPatientReferenceEnrichmentProvider} = require('./enrich/providers/proxyPatientReferenceEnrichmentProvider');
-const {KafkaClientFactory} = require('./utils/kafkaClientFactory');
+const {KafkaClient} = require('./utils/kafkaClient');
+const {DummyKafkaClient} = require('./utils/dummyKafkaClient');
 const {PersonMatchManager} = require('./admin/personMatchManager');
 const {MongoFilterGenerator} = require('./utils/mongoFilterGenerator');
 const {R4ArgsParser} = require('./operations/query/r4ArgsParser');
@@ -87,7 +88,8 @@ const {ChatGPTLangChainManager} = require('./chatgpt/managers/chatgptLangChainMa
 const {FhirResourceWriterFactory} = require('./operations/streaming/resourceWriters/fhirResourceWriterFactory');
 const {FhirToSummaryDocumentConverter} = require('./chatgpt/fhirToDocumentConverters/fhirToSummaryDocumentConverter');
 const {ResourceConverterFactory} = require('./chatgpt/resourceConverters/resourceConverterFactory');
-const {ConsentManager} = require('./operations/search/consentManger');
+const {ProaConsentManager} = require('./operations/search/proaConsentManager');
+const {DataSharingManager} = require('./operations/search/dataSharingManager');
 const {SearchQueryBuilder} = require('./operations/search/searchQueryBuilder');
 const {MergeValidator} = require('./operations/merge/mergeValidator');
 const {ParametersResourceValidator} = require('./operations/merge/validators/parameterResourceValidator');
@@ -104,6 +106,7 @@ const {OpenAILLMFactory} = require('./chatgpt/llms/openaiLLMFactory');
 const {MongoAtlasVectorStoreManager} = require('./chatgpt/vectorStores/mongoAtlasVectorStoreManager');
 const {ProfileUrlMapper} = require('./utils/profileMapper');
 const {ReferenceQueryRewriter} = require('./queryRewriters/rewriters/referenceQueryRewriter');
+const {HiddenMetaTagEnrichmentProvider} = require('./enrich/providers/hiddenMetaTagEnrichmentProvider');
 const {READ} = require('./constants').OPERATIONS;
 /**
  * Creates a container and sets up all the services
@@ -115,9 +118,10 @@ const createContainer = function () {
 
     container.register('configManager', () => new ConfigManager());
 
-    container.register('kafkaClientFactory', (c) => new KafkaClientFactory({
-        configManager: c.configManager
-    }));
+    container.register('kafkaClient', (c) => c.configManager.kafkaEnableEvents ?
+        new KafkaClient({ configManager: c.configManager }) :
+        new DummyKafkaClient({ configManager: c.configManager })
+    );
 
     container.register('scopesManager', (c) => new ScopesManager(
         {
@@ -132,6 +136,7 @@ const createContainer = function () {
 
     container.register('enrichmentManager', (c) => new EnrichmentManager({
         enrichmentProviders: [
+            new HiddenMetaTagEnrichmentProvider(),
             new IdEnrichmentProvider(),
             new ProxyPatientReferenceEnrichmentProvider({
                 configManager: c.configManager,
@@ -205,7 +210,7 @@ const createContainer = function () {
     }));
     container.register('changeEventProducer', (c) => new ChangeEventProducer(
         {
-            kafkaClientFactory: c.kafkaClientFactory,
+            kafkaClient: c.kafkaClient,
             resourceManager: c.resourceManager,
             patientChangeTopic: env.KAFKA_PATIENT_CHANGE_TOPIC || 'business.events',
             consentChangeTopic: env.KAFKA_PATIENT_CHANGE_TOPIC || 'business.events',
@@ -216,12 +221,21 @@ const createContainer = function () {
     container.register('searchQueryBuilder', (c) => new SearchQueryBuilder({
         r4SearchQueryCreator: c.r4SearchQueryCreator,
     }));
-    container.register('consentManager', (c) => new ConsentManager({
+    container.register('proaConsentManager', (c) => new ProaConsentManager({
         databaseQueryFactory: c.databaseQueryFactory,
         configManager: c.configManager,
         patientFilterManager: c.patientFilterManager,
         searchQueryBuilder: c.searchQueryBuilder,
         bwellPersonFinder: c.bwellPersonFinder,
+    }));
+    container.register('dataSharingManager', (c) => new DataSharingManager({
+        databaseQueryFactory: c.databaseQueryFactory,
+        configManager: c.configManager,
+        patientFilterManager: c.patientFilterManager,
+        searchQueryBuilder: c.searchQueryBuilder,
+        bwellPersonFinder: c.bwellPersonFinder,
+        proaConsentManager: c.proaConsentManager,
+        requestSpecificCache: c.requestSpecificCache,
     }));
     container.register('partitioningManager', (c) => new PartitioningManager(
         {
@@ -312,8 +326,9 @@ const createContainer = function () {
                 scopesManager: c.scopesManager,
                 databaseAttachmentManager: c.databaseAttachmentManager,
                 fhirResourceWriterFactory: c.fhirResourceWriterFactory,
-                consentManager: c.consentManager,
-                searchQueryBuilder: c.searchQueryBuilder
+                proaConsentManager: c.proaConsentManager,
+                dataSharingManager: c.dataSharingManager,
+                searchQueryBuilder: c.searchQueryBuilder,
             }
         )
     );
