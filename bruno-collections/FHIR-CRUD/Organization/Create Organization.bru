@@ -1,0 +1,106 @@
+meta {
+  name: Create Organization
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Organization
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Organization",
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ]
+      }
+    ],
+    "name": "General Hospital",
+    "alias": ["Gen Hospital", "GH"],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "555-987-6543",
+        "use": "work"
+      },
+      {
+        "system": "email",
+        "value": "contact@generalhospital.com",
+        "use": "work"
+      },
+      {
+        "system": "url",
+        "value": "https://www.generalhospital.com",
+        "use": "work"
+      }
+    ],
+    "address": [
+      {
+        "use": "work",
+        "type": "physical",
+        "line": ["456 Hospital Drive"],
+        "city": "New York",
+        "state": "NY",
+        "postalCode": "10002",
+        "country": "US"
+      }
+    ],
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/contactentity-type",
+              "code": "ADMIN",
+              "display": "Administrative"
+            }
+          ]
+        },
+        "name": {
+          "family": "Johnson",
+          "given": ["Mary"]
+        },
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "555-987-6544",
+            "use": "work"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("Organization created successfully");
+    console.log("Organization ID:", res.body.id);
+    console.log("Name:", res.body.name);
+    console.log("Type:", res.body.type?.[0]?.coding?.[0]?.display);
+    
+    // Store the organization ID for use in other requests
+    bru.setVar("lastCreatedOrganizationId", res.body.id);
+  } else {
+    console.log("Failed to create organization:", res.status, res.body);
+  }
+}

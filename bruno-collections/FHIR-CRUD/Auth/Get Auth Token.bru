@@ -1,0 +1,38 @@
+meta {
+  name: Get Auth Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}",
+    "audience": "{{audience}}",
+    "grant_type": "client_credentials",
+    "scope": "user/*.read user/*.write access/*.*"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("authToken", res.body.access_token);
+    console.log("Auth token updated successfully");
+  } else {
+    console.log("Authentication failed:", res.body);
+    // Fallback to test token for development
+    const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJ1c2VybmFtZSI6InRlc3QtdXNlciIsImNsaWVudF9pZCI6InRlc3QtY2xpZW50Iiwic2NvcGUiOiJ1c2VyLyoucmVhZCB1c2VyLyoud3JpdGUgYWNjZXNzLyouKiIsImNsaWVudEZoaXJQZXJzb25JZCI6InRlc3QtcGVyc29uIiwiY2xpZW50RmhpclBhdGllbnRJZCI6InRlc3QtcGF0aWVudCIsImJ3ZWxsRmhpclBlcnNvbklkIjoicm9vdC1wZXJzb24iLCJid2VsbEZoaXJQYXRpZW50SWQiOiJ0ZXN0LXBhdGllbnQiLCJtYW5hZ2luZ09yZ2FuaXphdGlvbiI6InRlc3Qtb3JnIiwidG9rZW5fdXNlIjoiYWNjZXNzIiwiaXNzIjoiaHR0cDovL2Zvbzo4MCJ9.J57HePKOqOe-LS2FD4DdN0wpvfObT8iq5YjdmtMezot-56bvoHvXrtx1a5NpaF9NKwUidoQ2vqCNehZiOd2GSLjVvZHQfbjYS7GS-A-BrGeF7MGdqY5lCLHJ6vHE6mXpvXo_E-Ia5axC81ybrQCNHism0_g5MMiM9dn6LK2UlhRnFJtNZ9Z8kwJpEuzjVsd9qBwUa4qJbFhl20qHkNsLtgsHDJCAhAU1LgGXZq_b72EQNCxjcL_q2AQp60MgOsqDcscIMeCVlF_jqDaMOdGWybhUuWvu3ZwWy78_OLoS9e40FAu9THtS39668Po5_-KvMWjzh_JXi7tK3oy6zkMWEw";
+    bru.setEnvVar("authToken", testToken);
+    console.log("Using fallback test token");
+  }
+}

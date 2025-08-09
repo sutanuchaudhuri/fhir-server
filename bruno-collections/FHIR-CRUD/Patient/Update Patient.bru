@@ -1,0 +1,85 @@
+meta {
+  name: Update Patient
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{lastCreatedPatientId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "id": "{{lastCreatedPatientId}}",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "test-org"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "test-org"
+        }
+      ]
+    },
+    "identifier": [
+      {
+        "system": "http://example.org/patient-ids",
+        "value": "UPDATED-PATIENT-{{$randomInt}}"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "UpdatedLastName",
+        "given": ["UpdatedFirstName"]
+      }
+    ],
+    "gender": "other",
+    "birthDate": "1985-05-15",
+    "telecom": [
+      {
+        "system": "email",
+        "value": "updated.patient@example.com",
+        "use": "home"
+      },
+      {
+        "system": "phone",
+        "value": "+1-555-0123",
+        "use": "mobile"
+      }
+    ],
+    "address": [
+      {
+        "use": "home",
+        "line": ["456 Updated Street"],
+        "city": "UpdatedCity",
+        "state": "NY",
+        "postalCode": "10001",
+        "country": "US"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("Patient updated successfully");
+    console.log("Updated Patient Name:", res.body.name?.[0]?.given?.[0], res.body.name?.[0]?.family);
+  } else {
+    console.log("Failed to update patient:", res.status, res.body);
+  }
+}

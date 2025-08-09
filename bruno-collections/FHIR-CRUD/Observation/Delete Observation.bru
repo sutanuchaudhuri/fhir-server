@@ -1,0 +1,33 @@
+meta {
+  name: Delete Observation
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation/{{lastCreatedObservationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("Observation deleted successfully");
+    console.log("Deleted Observation ID:", "{{lastCreatedObservationId}}");
+    // Clear the observation ID since it's now deleted
+    bru.setVar("lastCreatedObservationId", "");
+  } else if (res.status === 404) {
+    console.log("Observation not found - may already be deleted");
+  } else {
+    console.log("Failed to delete observation:", res.status, res.body);
+  }
+}

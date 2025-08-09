@@ -295,7 +295,7 @@ function createApp({fnGetContainer}) {
         res.redirect(
             `/oauth/callback.html?code=${req.query.code}&resourceUrl=${resourceUrl}` +
             `&clientId=${process.env.AUTH_CODE_FLOW_CLIENT_ID}&redirectUri=${redirectUrl}` +
-            `&tokenUrl=${process.env.AUTH_CODE_FLOW_URL}/oauth2/token`
+            `&tokenUrl=${process.env.AUTH_TOKEN_URL}`
         );
     });
 

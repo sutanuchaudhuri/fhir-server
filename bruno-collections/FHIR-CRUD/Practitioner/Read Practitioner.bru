@@ -1,0 +1,34 @@
+meta {
+  name: Read Practitioner
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Practitioner/{{lastCreatedPractitionerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("Practitioner retrieved successfully");
+    console.log("Practitioner ID:", res.body.id);
+    console.log("Name:", res.body.name?.[0]?.prefix?.[0], res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("Active:", res.body.active);
+    console.log("Gender:", res.body.gender);
+  } else if (res.status === 404) {
+    console.log("Practitioner not found - please create a practitioner first");
+  } else {
+    console.log("Failed to retrieve practitioner:", res.status, res.body);
+  }
+}

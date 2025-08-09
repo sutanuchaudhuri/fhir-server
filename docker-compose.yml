@@ -1,30 +1,34 @@
 services:
   fhir:
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NODE_ENV: development
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       SHUTDOWN_DELAY_MS: 1000
       SERVER_PORT: 3000
       MONGO_DB_NAME: fhir
-      MONGO_URL: 'mongodb://mongo:27017?appName=fhir-server'
+      MONGO_URL: 'mongodb+srv://sutanuchaudhuri:ILoveKolkata%401982@clusterfhir.h7n3rvj.mongodb.net/fhir?appName=fhir-server'
       AUDIT_EVENT_MONGO_DB_NAME: fhir
-      AUDIT_EVENT_MONGO_URL: mongodb://mongo:27017
-      RESOURCE_SERVER: http://localhost:3000/
-      AUTH_SERVER_URI: http://myauthzserver.com
-      CLIENT_ID: client
-      CLIENT_SECRET: secret
-      AUTH_CONFIGURATION_URI: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_yV7wvD4xD/.well-known/openid-configuration
-      AUTH_JWKS_URL: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_yV7wvD4xD/.well-known/jwks.json
-      AUTH_CODE_FLOW_URL: https://bwell-dev.auth.us-east-1.amazoncognito.com
+      AUDIT_EVENT_MONGO_URL: 'mongodb+srv://sutanuchaudhuri:ILoveKolkata%401982@clusterfhir.h7n3rvj.mongodb.net/fhir?appName=fhir-server'
+      RESOURCE_SERVER: http://localhost:3500/
+      AUTH_SERVER_URI: https://dev-xjawa6dpvqw14cl6.us.auth0.com
+      CLIENT_ID: KejZ1txEKNbZUIPAwAu2bKfRPP5AdpJg
+      CLIENT_SECRET: --nUFIF8UzF5aN_j35RH5hwwbSE4tK5yxfAWeQ1fupMF6l2McGt25392lwJaB2K1
+      AUTH_CONFIGURATION_URI: https://dev-xjawa6dpvqw14cl6.us.auth0.com/.well-known/openid-configuration
+      AUTH_JWKS_URL: https://dev-xjawa6dpvqw14cl6.us.auth0.com/.well-known/jwks.json
+      AUTH_CODE_FLOW_URL: https://dev-xjawa6dpvqw14cl6.us.auth0.com
+      AUTH_TOKEN_URL: https://dev-xjawa6dpvqw14cl6.us.auth0.com/oauth/token
       MAX_INDEX_NAME_LENGTH: 65
       ENV: local
-      ENABLE_MONGO_PROJECTIONS_IN_GRAPHQL: 0
-      ENABLE_MONGO_PROJECTIONS_IN_GRAPHQLV2: 0
+      ENABLE_MONGO_PROJECTIONS_IN_GRAPHQL: 1
+      ENABLE_MONGO_PROJECTIONS_IN_GRAPHQLV2: 1
       MONGO_TIMEOUT: 30000
       LOGLEVEL: 'INFO'
       ENABLE_GRAPHQL: 1
@@ -39,7 +43,7 @@ services:
       LOG_EXCLUDE_RESOURCES: 'Person,Patient'
       STREAM_RESPONSE: '1'
       LOG_STREAM_STEPS: '0'
-      ENABLE_EVENTS_KAFKA: '1'
+      ENABLE_EVENTS_KAFKA: '0'
       ENABLE_BULK_EXPORT_KAFKA_EVENTS: '1'
       ENABLE_FHIR_OPERATION_USAGE_KAFKA_EVENTS: 1
       ENABLE_KAFKA_HEALTHCHECK: '1'

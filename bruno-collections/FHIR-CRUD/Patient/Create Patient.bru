@@ -1,0 +1,80 @@
+meta {
+  name: Create Patient
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "test-org"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "test-org"
+        }
+      ]
+    },
+    "identifier": [
+      {
+        "system": "http://example.org/patient-ids",
+        "value": "PATIENT-{{$randomInt}}"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "{{$randomLastName}}",
+        "given": ["{{$randomFirstName}}"]
+      }
+    ],
+    "gender": "{{$randomArrayElement('male', 'female')}}",
+    "birthDate": "{{$randomDatePast}}",
+    "telecom": [
+      {
+        "system": "email",
+        "value": "{{$randomEmail}}",
+        "use": "home"
+      }
+    ],
+    "address": [
+      {
+        "use": "home",
+        "line": ["{{$randomStreetAddress}}"],
+        "city": "{{$randomCity}}",
+        "state": "{{$randomStateAbbr}}",
+        "postalCode": "{{$randomZipCode}}",
+        "country": "US"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201 || res.status === 200) {
+    const patientId = res.body.id;
+    bru.setEnvVar("lastCreatedPatientId", patientId);
+    console.log("Patient created successfully with ID:", patientId);
+  } else {
+    console.log("Failed to create patient:", res.status, res.body);
+  }
+}

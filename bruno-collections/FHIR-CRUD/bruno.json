@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "FHIR Server CRUD Operations",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

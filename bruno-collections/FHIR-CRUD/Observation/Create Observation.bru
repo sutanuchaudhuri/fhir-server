@@ -1,0 +1,79 @@
+meta {
+  name: Create Observation
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "test-org"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "test-org"
+        }
+      ]
+    },
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "Vital Signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "8867-4",
+          "display": "Heart rate"
+        }
+      ]
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}"
+    },
+    "effectiveDateTime": "{{$isoTimestamp}}",
+    "valueQuantity": {
+      "value": {{$randomInt(60, 100)}},
+      "unit": "beats/min",
+      "system": "http://unitsofmeasure.org",
+      "code": "/min"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 201 || res.status === 200) {
+    const observationId = res.body.id;
+    bru.setEnvVar("lastCreatedObservationId", observationId);
+    console.log("Observation created successfully with ID:", observationId);
+  } else {
+    console.log("Failed to create observation:", res.status, res.body);
+  }
+}

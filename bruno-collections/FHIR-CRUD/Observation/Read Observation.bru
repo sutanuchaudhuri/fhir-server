@@ -1,0 +1,33 @@
+meta {
+  name: Read Observation
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation/{{lastCreatedObservationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("Observation retrieved successfully");
+    console.log("Observation ID:", res.body.id);
+    console.log("Code:", res.body.code?.coding?.[0]?.display);
+    console.log("Value:", res.body.valueQuantity?.value, res.body.valueQuantity?.unit);
+  } else if (res.status === 404) {
+    console.log("Observation not found - please create an observation first");
+  } else {
+    console.log("Failed to retrieve observation:", res.status, res.body);
+  }
+}

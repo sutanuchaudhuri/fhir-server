@@ -1,0 +1,30 @@
+meta {
+  name: Delete Patient
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{lastCreatedPatientId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("Patient deleted successfully");
+  } else if (res.status === 404) {
+    console.log("Patient not found - may have been already deleted");
+  } else {
+    console.log("Failed to delete patient:", res.status, res.body);
+  }
+}

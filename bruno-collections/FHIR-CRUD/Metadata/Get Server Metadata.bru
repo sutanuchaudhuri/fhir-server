@@ -1,0 +1,48 @@
+meta {
+  name: Get Server Metadata
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:pre-request {
+  // Auto-authenticate if no token exists
+  if (!bru.getEnvVar("authToken")) {
+    console.log("No auth token found, running authentication first...");
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("Metadata retrieved successfully");
+    console.log("Server software:", res.body.software?.name);
+    console.log("FHIR version:", res.body.fhirVersion);
+    
+    // Check OAuth endpoints
+    const security = res.body.rest?.[0]?.security;
+    if (security?.extension?.[0]?.extension) {
+      const endpoints = security.extension[0].extension;
+      endpoints.forEach(endpoint => {
+        console.log(`${endpoint.url}: ${endpoint.valueUri}`);
+      });
+    }
+  } else if (res.status === 401) {
+    console.log("Authentication required - please run 'Get Auth Token' first");
+  } else {
+    console.log("Failed to get metadata:", res.status, res.body);
+  }
+}

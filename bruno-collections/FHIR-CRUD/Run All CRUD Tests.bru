@@ -1,0 +1,49 @@
+meta {
+  name: Run All CRUD Tests
+  type: http
+  seq: 99
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== FHIR CRUD Operations Test Runner ===");
+  console.log("Server Status:", res.status === 200 ? "✅ Online" : "❌ Offline");
+  
+  if (res.status === 200) {
+    console.log("FHIR Version:", res.body.fhirVersion);
+    console.log("Server Software:", res.body.software?.name);
+    console.log("");
+    
+    console.log("📋 Test Sequence:");
+    console.log("1. Authentication");
+    console.log("2. Patient CRUD (Create → Read → Update → Search → Delete)");
+    console.log("3. Observation CRUD (Create → Read → Update → Search → Delete)");
+    console.log("4. Practitioner CRUD (Create → Read)");
+    console.log("5. Organization CRUD (Create)");
+    console.log("");
+    console.log("💡 To run the full test suite:");
+    console.log("1. First run 'Get Auth Token' to authenticate");
+    console.log("2. Then run each CRUD operation in sequence");
+    console.log("3. Or use Bruno's 'Run Collection' feature to execute all");
+    console.log("");
+    console.log("🔗 Available endpoints:");
+    if (res.body.rest && res.body.rest[0] && res.body.rest[0].resource) {
+      const resources = res.body.rest[0].resource.map(r => r.type).sort();
+      console.log("Supported resources:", resources.join(", "));
+    }
+  }
+}

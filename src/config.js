@@ -17,8 +17,10 @@ if (env.MONGO_USERNAME !== undefined) {
         `mongodb+srv://${env.MONGO_USERNAME}:${env.MONGO_PASSWORD}@`
     );
 }
-// url-encode the url
-mongoUrl = encodeURI(mongoUrl);
+// url-encode the url (skip for mongodb+srv URLs that are already encoded)
+if (!mongoUrl.includes('mongodb+srv://')) {
+    mongoUrl = encodeURI(mongoUrl);
+}
 const queryParams = getQueryParams(mongoUrl);
 const writeConcern = queryParams.w ?? 'majority';
 delete queryParams.w;
@@ -76,8 +78,10 @@ if (env.AUDIT_EVENT_MONGO_URL) {
             `mongodb+srv://${env.AUDIT_EVENT_MONGO_USERNAME}:${env.AUDIT_EVENT_MONGO_PASSWORD}@`
         );
     }
-// url-encode the url
-    auditEventMongoUrl = auditEventMongoUrl ? encodeURI(auditEventMongoUrl) : auditEventMongoUrl;
+// url-encode the url (skip for mongodb+srv URLs that are already encoded)
+    if (auditEventMongoUrl && !auditEventMongoUrl.includes('mongodb+srv://')) {
+        auditEventMongoUrl = encodeURI(auditEventMongoUrl);
+    }
     const auditQueryParams = getQueryParams(auditEventMongoUrl);
     const auditWriteConcern = auditQueryParams.w ?? 'majority';
     delete auditQueryParams.w;

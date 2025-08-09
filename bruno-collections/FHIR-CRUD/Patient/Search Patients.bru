@@ -1,0 +1,41 @@
+meta {
+  name: Search Patients
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient?_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("Search completed successfully");
+    console.log("Total patients found:", bundle.total);
+    console.log("Patients in this page:", bundle.entry?.length || 0);
+    
+    // List patient names
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\nPatients:");
+      bundle.entry.forEach((entry, index) => {
+        const patient = entry.resource;
+        const name = patient.name?.[0];
+        console.log(`${index + 1}. ${name?.given?.[0] || 'Unknown'} ${name?.family || 'Unknown'} (ID: ${patient.id})`);
+      });
+    }
+  } else {
+    console.log("Failed to search patients:", res.status, res.body);
+  }
+}
