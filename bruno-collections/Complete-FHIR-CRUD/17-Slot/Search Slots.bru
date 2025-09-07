@@ -1,0 +1,70 @@
+meta {
+  name: Search Slots
+  type: http
+  seq: 41
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Slot?status=free&start=ge2024-01-20T00:00:00Z&start=le2024-01-20T23:59:59Z&_count=20&_sort=start
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Slot search successful");
+    console.log("Bundle type:", res.body.type);
+    console.log("Total slots found:", res.body.total);
+    console.log("Slots returned:", res.body.entry?.length || 0);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("\n📅 Available Slots:");
+      res.body.entry.forEach((entry, index) => {
+        const slot = entry.resource;
+        const startTime = new Date(slot.start);
+        const endTime = new Date(slot.end);
+        const duration = (endTime - startTime) / (1000 * 60);
+        
+        console.log(`${index + 1}. Slot ${slot.id}`);
+        console.log(`   Status: ${slot.status}`);
+        console.log(`   Time: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
+        console.log(`   Duration: ${duration} minutes`);
+        console.log(`   Service: ${slot.serviceType?.[0]?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Specialty: ${slot.specialty?.[0]?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Type: ${slot.appointmentType?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Overbooked: ${slot.overbooked}`);
+        if (slot.comment) {
+          console.log(`   Comment: ${slot.comment}`);
+        }
+        console.log("");
+      });
+      
+      // Count by status
+      const statusCounts = res.body.entry.reduce((acc, entry) => {
+        const status = entry.resource.status;
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("📊 Slot Status Summary:");
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        console.log(`   ${status}: ${count}`);
+      });
+    }
+    
+    // Store first slot ID for other tests
+    if (res.body.entry && res.body.entry.length > 0) {
+      bru.setEnvVar("searchedSlotId", res.body.entry[0].resource.id);
+    }
+  } else {
+    console.log("❌ Failed to search slots:", res.status, res.body);
+  }
+}

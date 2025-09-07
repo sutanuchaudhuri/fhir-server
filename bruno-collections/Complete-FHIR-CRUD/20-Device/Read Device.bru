@@ -1,0 +1,77 @@
+meta {
+  name: Read Device
+  type: http
+  seq: 54
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Device/{{lastCreatedDeviceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Device retrieved successfully");
+    console.log("Device ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Status:", res.body.status);
+    console.log("Manufacturer:", res.body.manufacturer);
+    console.log("Model Number:", res.body.modelNumber);
+    console.log("Serial Number:", res.body.serialNumber);
+    console.log("Device Type:", res.body.type?.text || res.body.type?.coding?.[0]?.display);
+    console.log("Owner:", res.body.owner?.display);
+    console.log("Location:", res.body.location?.display);
+    
+    if (res.body.deviceName && res.body.deviceName.length > 0) {
+      console.log("\n📱 Device Names:");
+      res.body.deviceName.forEach((name, index) => {
+        console.log(`${index + 1}. ${name.name} (${name.type})`);
+      });
+    }
+    
+    if (res.body.version && res.body.version.length > 0) {
+      console.log("\n💿 Versions:");
+      res.body.version.forEach((version, index) => {
+        console.log(`${index + 1}. ${version.type?.coding?.[0]?.display}: ${version.value}`);
+        if (version.component?.value) {
+          console.log(`   Component: ${version.component.value}`);
+        }
+      });
+    }
+    
+    if (res.body.property && res.body.property.length > 0) {
+      console.log("\n⚙️ Properties:");
+      res.body.property.forEach((prop, index) => {
+        const qty = prop.valueQuantity?.[0];
+        console.log(`${index + 1}. ${prop.type?.coding?.[0]?.display}: ${qty?.value} ${qty?.unit}`);
+      });
+    }
+    
+    if (res.body.specialization && res.body.specialization.length > 0) {
+      console.log("\n🔬 Specializations:");
+      res.body.specialization.forEach((spec, index) => {
+        console.log(`${index + 1}. ${spec.systemType?.coding?.[0]?.display} (v${spec.version})`);
+      });
+    }
+    
+    if (res.body.udiCarrier && res.body.udiCarrier.length > 0) {
+      console.log("\n🏷️ UDI Information:");
+      res.body.udiCarrier.forEach((udi, index) => {
+        console.log(`${index + 1}. Device Identifier: ${udi.deviceIdentifier}`);
+        console.log(`   Issuer: ${udi.issuer}`);
+        console.log(`   Human Readable: ${udi.carrierHRF}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve device:", res.status, res.body);
+  }
+}

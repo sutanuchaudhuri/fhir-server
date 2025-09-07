@@ -1,0 +1,31 @@
+meta {
+  name: Delete Practitioner
+  type: http
+  seq: 23
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Practitioner/{{lastCreatedPractitionerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Practitioner deleted successfully");
+    console.log("Deleted Practitioner ID:", "{{lastCreatedPractitionerId}}");
+    bru.setVar("lastCreatedPractitionerId", "");
+  } else if (res.status === 404) {
+    console.log("❌ Practitioner not found - may already be deleted");
+  } else {
+    console.log("❌ Failed to delete practitioner:", res.status, res.body);
+  }
+}

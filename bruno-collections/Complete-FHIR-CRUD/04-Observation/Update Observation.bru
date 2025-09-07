@@ -1,0 +1,314 @@
+meta {
+  name: Update Observation
+  type: http
+  seq: 87
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation/{{lastCreatedObservationId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Observation",
+    "id": "{{lastCreatedObservationId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Observation"]
+    },
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "Vital Signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "85354-9",
+          "display": "Blood pressure panel with all children optional"
+        }
+      ],
+      "text": "Blood Pressure Measurement - Updated"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "effectiveDateTime": "{{$isoTimestamp}}",
+    "issued": "{{$isoTimestamp}}",
+    "performer": [
+      {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Emily Smith"
+      },
+      {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "City General Hospital"
+      }
+    ],
+    "valueQuantity": {
+      "value": 128,
+      "unit": "mmHg",
+      "system": "http://unitsofmeasure.org",
+      "code": "mm[Hg]"
+    },
+    "dataAbsentReason": null,
+    "interpretation": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+            "code": "H",
+            "display": "High"
+          }
+        ],
+        "text": "Elevated blood pressure reading"
+      }
+    ],
+    "note": [
+      {
+        "text": "Updated reading shows persistent elevation. Patient was relaxed during measurement. Consider medication adjustment. Follow-up in 2 weeks recommended.",
+        "time": "{{$isoTimestamp}}"
+      }
+    ],
+    "bodySite": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "368209003",
+          "display": "Right upper arm structure"
+        }
+      ]
+    },
+    "method": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "37931006",
+          "display": "Auscultation"
+        }
+      ],
+      "text": "Manual blood pressure measurement with stethoscope"
+    },
+    "device": {
+      "reference": "Device/bp-monitor-001",
+      "display": "Digital Blood Pressure Monitor"
+    },
+    "referenceRange": [
+      {
+        "low": {
+          "value": 90,
+          "unit": "mmHg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        },
+        "high": {
+          "value": 120,
+          "unit": "mmHg", 
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        },
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/referencerange-meaning",
+              "code": "normal",
+              "display": "Normal Range"
+            }
+          ]
+        },
+        "appliesTo": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "248153007",
+                "display": "Male"
+              }
+            ]
+          }
+        ],
+        "age": {
+          "low": {
+            "value": 18,
+            "unit": "years",
+            "system": "http://unitsofmeasure.org",
+            "code": "a"
+          },
+          "high": {
+            "value": 65,
+            "unit": "years",
+            "system": "http://unitsofmeasure.org", 
+            "code": "a"
+          }
+        }
+      }
+    ],
+    "hasMember": [
+      {
+        "reference": "Observation/systolic-bp-001",
+        "display": "Systolic Blood Pressure"
+      },
+      {
+        "reference": "Observation/diastolic-bp-001",
+        "display": "Diastolic Blood Pressure"
+      }
+    ],
+    "derivedFrom": [
+      {
+        "reference": "Observation/previous-bp-reading-001",
+        "display": "Previous BP Reading"
+      }
+    ],
+    "component": [
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8480-6",
+              "display": "Systolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 128,
+          "unit": "mmHg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        },
+        "interpretation": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                "code": "H",
+                "display": "High"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8462-4",
+              "display": "Diastolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 85,
+          "unit": "mmHg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        },
+        "interpretation": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                "code": "H",
+                "display": "High"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const observation = res.body;
+    console.log("✅ Observation updated successfully");
+    console.log("Observation ID:", observation.id);
+    
+    console.log("\n📋 Updated Observation Details:");
+    console.log("Status:", observation.status);
+    console.log("Category:", observation.category?.[0]?.coding?.[0]?.display);
+    console.log("Code:", observation.code?.coding?.[0]?.display);
+    console.log("Subject:", observation.subject?.display);
+    console.log("Effective Date:", observation.effectiveDateTime);
+    console.log("Issued:", observation.issued);
+    
+    if (observation.valueQuantity) {
+      console.log("\n📊 Updated Value:");
+      console.log("Value:", `${observation.valueQuantity.value} ${observation.valueQuantity.unit}`);
+    }
+    
+    if (observation.interpretation && observation.interpretation.length > 0) {
+      console.log("\n🔍 Interpretation:");
+      observation.interpretation.forEach((interp, index) => {
+        console.log(`  ${index + 1}. ${interp.coding?.[0]?.display} - ${interp.text}`);
+      });
+    }
+    
+    if (observation.component && observation.component.length > 0) {
+      console.log("\n🧩 Updated Components:");
+      observation.component.forEach((component, index) => {
+        console.log(`  ${index + 1}. ${component.code?.coding?.[0]?.display}`);
+        console.log(`     Value: ${component.valueQuantity?.value} ${component.valueQuantity?.unit}`);
+        console.log(`     Interpretation: ${component.interpretation?.[0]?.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (observation.performer && observation.performer.length > 0) {
+      console.log("\n👥 Performers:");
+      observation.performer.forEach((performer, index) => {
+        console.log(`  ${index + 1}. ${performer.display}`);
+      });
+    }
+    
+    if (observation.referenceRange && observation.referenceRange.length > 0) {
+      console.log("\n📏 Reference Range:");
+      observation.referenceRange.forEach((range, index) => {
+        console.log(`  Range ${index + 1}: ${range.low?.value}-${range.high?.value} ${range.low?.unit}`);
+        console.log(`  Type: ${range.type?.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (observation.note && observation.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      observation.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", observation.meta?.versionId || "Unknown");
+    console.log("Last Updated:", observation.meta?.lastUpdated || "Unknown");
+    console.log("Components:", observation.component?.length || 0);
+    console.log("Performers:", observation.performer?.length || 0);
+    console.log("Reference Ranges:", observation.referenceRange?.length || 0);
+    console.log("Has Members:", observation.hasMember?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Observation:", res.status, res.body);
+  }
+}

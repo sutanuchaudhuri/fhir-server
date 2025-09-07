@@ -1,0 +1,145 @@
+meta {
+  name: Create Appointment
+  type: http
+  seq: 120
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Appointment
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Appointment",
+    "status": "booked",
+    "serviceCategory": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-category",
+            "code": "17",
+            "display": "General Practice"
+          }
+        ]
+      }
+    ],
+    "serviceType": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-type",
+            "code": "124",
+            "display": "General practice"
+          }
+        ]
+      }
+    ],
+    "specialty": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "394814009",
+            "display": "General practice"
+          }
+        ]
+      }
+    ],
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0276",
+          "code": "ROUTINE",
+          "display": "Routine appointment"
+        }
+      ]
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "185349003",
+            "display": "Encounter for check up"
+          }
+        ]
+      }
+    ],
+    "priority": 5,
+    "description": "Annual physical examination and health check-up",
+    "start": "2024-02-15T10:00:00Z",
+    "end": "2024-02-15T11:00:00Z",
+    "minutesDuration": 60,
+    "participant": [
+      {
+        "actor": {
+          "reference": "Patient/{{lastCreatedPatientId}}",
+          "display": "John Doe"
+        },
+        "required": "required",
+        "status": "accepted"
+      },
+      {
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "ATND",
+                "display": "attender"
+              }
+            ]
+          }
+        ],
+        "actor": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "required": "required",
+        "status": "accepted"
+      },
+      {
+        "actor": {
+          "reference": "Location/{{lastCreatedLocationId}}",
+          "display": "Exam Room 1"
+        },
+        "required": "required",
+        "status": "accepted"
+      }
+    ],
+    "requestedPeriod": [
+      {
+        "start": "2024-02-15T10:00:00Z",
+        "end": "2024-02-15T11:00:00Z"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Appointment created successfully");
+    console.log("Appointment ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Start:", res.body.start);
+    console.log("End:", res.body.end);
+    console.log("Duration:", res.body.minutesDuration, "minutes");
+    console.log("Participants:", res.body.participant?.length || 0);
+    
+    // Store the appointment ID for use in other requests
+    bru.setVar("lastCreatedAppointmentId", res.body.id);
+  } else {
+    console.log("❌ Failed to create appointment:", res.status, res.body);
+  }
+}

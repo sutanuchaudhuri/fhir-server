@@ -1,0 +1,290 @@
+meta {
+  name: Update Coverage
+  type: http
+  seq: 95
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Coverage/{{lastCreatedCoverageId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Coverage",
+    "id": "{{lastCreatedCoverageId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Coverage"]
+    },
+    "status": "active",
+    "type": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "EHCPOL",
+          "display": "Extended Healthcare Policy"
+        }
+      ],
+      "text": "Extended Healthcare Insurance Policy - Updated"
+    },
+    "policyHolder": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "subscriber": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "subscriberId": "MEMBER-12345-UPDATED",
+    "beneficiary": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "dependent": "01",
+    "relationship": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+          "code": "self",
+          "display": "Self"
+        }
+      ]
+    },
+    "period": {
+      "start": "2024-01-01T00:00:00Z",
+      "end": "2024-12-31T23:59:59Z"
+    },
+    "payor": [
+      {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "City General Hospital Insurance"
+      }
+    ],
+    "class": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "group",
+              "display": "Group"
+            }
+          ]
+        },
+        "value": "GROUP-001-UPDATED",
+        "name": "Updated Employee Health Benefits Group"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "subgroup",
+              "display": "SubGroup"
+            }
+          ]
+        },
+        "value": "SUBGROUP-MGMT-UPDATED",
+        "name": "Updated Management Level Benefits"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "plan",
+              "display": "Plan"
+            }
+          ]
+        },
+        "value": "PLAN-PREMIUM-PLUS",
+        "name": "Premium Plus Healthcare Plan - Updated"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "subplan",
+              "display": "SubPlan"
+            }
+          ]
+        },
+        "value": "SUBPLAN-COMPREHENSIVE",
+        "name": "Comprehensive Coverage Subplan - Updated"
+      }
+    ],
+    "order": 1,
+    "network": "NETWORK-PREMIUM-UPDATED",
+    "costToBeneficiary": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "copay",
+              "display": "Copay"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 25.00,
+          "currency": "USD"
+        },
+        "exception": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/ex-coverage-financial-exception",
+                  "code": "retired",
+                  "display": "Retired"
+                }
+              ]
+            },
+            "period": {
+              "start": "2024-01-01T00:00:00Z"
+            }
+          }
+        ]
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "coinsurance",
+              "display": "Coinsurance"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 20.0,
+          "unit": "%"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "deductible",
+              "display": "Deductible"
+            }
+          ]
+        },
+        "valueMoney": {
+          "value": 1500.00,
+          "currency": "USD"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "maxoutofpocket",
+              "display": "Maximum out of pocket"
+            }
+          ]
+        },
+        "valueMoney": {
+          "value": 7500.00,
+          "currency": "USD"
+        }
+      }
+    ],
+    "subrogation": false,
+    "contract": [
+      {
+        "reference": "Contract/insurance-contract-001",
+        "display": "Updated Master Insurance Contract"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const coverage = res.body;
+    console.log("✅ Coverage updated successfully");
+    console.log("Coverage ID:", coverage.id);
+    
+    console.log("\n📋 Updated Coverage Details:");
+    console.log("Status:", coverage.status);
+    console.log("Type:", coverage.type?.coding?.[0]?.display);
+    console.log("Policy Holder:", coverage.policyHolder?.display);
+    console.log("Subscriber:", coverage.subscriber?.display);
+    console.log("Subscriber ID:", coverage.subscriberId);
+    console.log("Beneficiary:", coverage.beneficiary?.display);
+    console.log("Dependent:", coverage.dependent);
+    console.log("Relationship:", coverage.relationship?.coding?.[0]?.display);
+    console.log("Period:", `${coverage.period?.start} to ${coverage.period?.end}`);
+    console.log("Network:", coverage.network);
+    console.log("Order:", coverage.order);
+    
+    if (coverage.payor && coverage.payor.length > 0) {
+      console.log("\n💰 Updated Payors:");
+      coverage.payor.forEach((payor, index) => {
+        console.log(`  ${index + 1}. ${payor.display}`);
+      });
+    }
+    
+    if (coverage.class && coverage.class.length > 0) {
+      console.log("\n🏷️ Updated Coverage Classes:");
+      coverage.class.forEach((cls, index) => {
+        console.log(`  ${index + 1}. ${cls.type?.coding?.[0]?.display}:`);
+        console.log(`     Value: ${cls.value}`);
+        console.log(`     Name: ${cls.name}`);
+      });
+    }
+    
+    if (coverage.costToBeneficiary && coverage.costToBeneficiary.length > 0) {
+      console.log("\n💵 Updated Cost to Beneficiary:");
+      coverage.costToBeneficiary.forEach((cost, index) => {
+        console.log(`  ${index + 1}. Type: ${cost.type?.coding?.[0]?.display}`);
+        if (cost.valueQuantity) {
+          console.log(`     Value: ${cost.valueQuantity.value} ${cost.valueQuantity.currency || cost.valueQuantity.unit}`);
+        }
+        if (cost.valueMoney) {
+          console.log(`     Amount: ${cost.valueMoney.value} ${cost.valueMoney.currency}`);
+        }
+        if (cost.exception && cost.exception.length > 0) {
+          console.log(`     Exceptions: ${cost.exception.length}`);
+          cost.exception.forEach((exc, idx) => {
+            console.log(`       ${idx + 1}. ${exc.type?.coding?.[0]?.display}`);
+            console.log(`          Period: ${exc.period?.start} to ${exc.period?.end || 'ongoing'}`);
+          });
+        }
+      });
+    }
+    
+    if (coverage.contract && coverage.contract.length > 0) {
+      console.log("\n📄 Updated Contracts:");
+      coverage.contract.forEach((contract, index) => {
+        console.log(`  ${index + 1}. ${contract.display}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("Version:", coverage.meta?.versionId || "Unknown");
+    console.log("Last Updated:", coverage.meta?.lastUpdated || "Unknown");
+    console.log("Coverage Classes:", coverage.class?.length || 0);
+    console.log("Cost Categories:", coverage.costToBeneficiary?.length || 0);
+    console.log("Contracts:", coverage.contract?.length || 0);
+    console.log("Subrogation:", coverage.subrogation ? "Yes" : "No");
+    
+  } else {
+    console.log("❌ Failed to update Coverage:", res.status, res.body);
+  }
+}

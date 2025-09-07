@@ -1,0 +1,40 @@
+meta {
+  name: Get FHIR Auth Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://dev-xjawa6dpvqw14cl6.us.auth0.com/oauth/token
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "client_id": "4EGTyCdilNFNtyPFZP6ujlMYr6tlSauR",
+    "client_secret": "nIHMDp0kM6oLO5zWNZ5FkX4O2tOzY7Cg4xjL0HrZPKQmgZAZKQ-NeQHlY9d6hLm9",
+    "audience": "http://localhost:3000",
+    "grant_type": "client_credentials",
+    "scope": "user/*.* access/*.*"
+  }
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Access token is present", function() {
+    expect(res.body.access_token).to.not.be.undefined;
+    bru.setVar("access_token", res.body.access_token);
+  });
+  
+  test("Token type is Bearer", function() {
+    expect(res.body.token_type).to.equal("Bearer");
+  });
+}

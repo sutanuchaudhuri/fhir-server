@@ -1,0 +1,230 @@
+meta {
+  name: Create Coverage
+  type: http
+  seq: 52
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Coverage
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Coverage",
+    "identifier": [
+      {
+        "system": "http://example.org/coverage-identifier",
+        "value": "COV-2024-001"
+      }
+    ],
+    "status": "active",
+    "type": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "EHCPOL",
+          "display": "extended healthcare"
+        }
+      ]
+    },
+    "policyHolder": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "subscriber": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "subscriberId": "SUB123456789",
+    "beneficiary": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "dependent": "01",
+    "relationship": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+          "code": "self",
+          "display": "Self"
+        }
+      ]
+    },
+    "period": {
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    "payor": [
+      {
+        "reference": "Organization/insurance-company-123",
+        "display": "Blue Cross Blue Shield"
+      }
+    ],
+    "class": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "group",
+              "display": "Group"
+            }
+          ]
+        },
+        "value": "EMP001",
+        "name": "Employee Group Plan"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "plan",
+              "display": "Plan"
+            }
+          ]
+        },
+        "value": "GOLD-PPO",
+        "name": "Gold PPO Plan"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+              "code": "subplan",
+              "display": "SubPlan"
+            }
+          ]
+        },
+        "value": "GOLD-PPO-ENHANCED",
+        "name": "Gold PPO Enhanced Benefits"
+      }
+    ],
+    "order": 1,
+    "network": "PPO Network A",
+    "costToBeneficiary": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "copay",
+              "display": "Copay"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 25.00,
+          "currency": "USD"
+        },
+        "exception": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/ex-coverage-financial-exception",
+                  "code": "foster",
+                  "display": "Foster child"
+                }
+              ]
+            },
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31"
+            }
+          }
+        ]
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "coinsurance",
+              "display": "Coinsurance"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 20,
+          "unit": "%"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+              "code": "deductible",
+              "display": "Deductible"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 500.00,
+          "currency": "USD"
+        }
+      }
+    ],
+    "contract": [
+      {
+        "reference": "Contract/insurance-contract-123"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Coverage created successfully");
+    console.log("Coverage ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Type:", res.body.type?.coding?.[0]?.display);
+    console.log("Beneficiary:", res.body.beneficiary?.display);
+    console.log("Subscriber ID:", res.body.subscriberId);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    console.log("Network:", res.body.network);
+    console.log("Order:", res.body.order);
+    
+    if (res.body.payor && res.body.payor.length > 0) {
+      console.log("\n💳 Payor:");
+      res.body.payor.forEach((payor, index) => {
+        console.log(`${index + 1}. ${payor.display || payor.reference}`);
+      });
+    }
+    
+    if (res.body.class && res.body.class.length > 0) {
+      console.log("\n📋 Coverage Classes:");
+      res.body.class.forEach((cls, index) => {
+        console.log(`${index + 1}. ${cls.type?.coding?.[0]?.display}: ${cls.value} (${cls.name})`);
+      });
+    }
+    
+    if (res.body.costToBeneficiary && res.body.costToBeneficiary.length > 0) {
+      console.log("\n💰 Cost to Beneficiary:");
+      res.body.costToBeneficiary.forEach((cost, index) => {
+        const type = cost.type?.coding?.[0]?.display;
+        const value = cost.valueQuantity?.value;
+        const unit = cost.valueQuantity?.unit || cost.valueQuantity?.currency;
+        console.log(`${index + 1}. ${type}: ${value} ${unit}`);
+      });
+    }
+    
+    // Store the coverage ID for other requests
+    bru.setEnvVar("lastCreatedCoverageId", res.body.id);
+  } else {
+    console.log("❌ Failed to create coverage:", res.status, res.body);
+  }
+}

@@ -1,0 +1,262 @@
+meta {
+  name: Create Task
+  type: http
+  seq: 53
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Task
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Task",
+    "identifier": [
+      {
+        "system": "http://example.org/task-identifier",
+        "value": "TASK-LAB-FOLLOW-UP-001"
+      }
+    ],
+    "instantiatesCanonical": "http://example.org/ActivityDefinition/lab-follow-up",
+    "instantiatesUri": "http://example.org/protocols/lab-result-follow-up",
+    "basedOn": [
+      {
+        "reference": "ServiceRequest/{{lastCreatedServiceRequestId}}",
+        "display": "Lipid Panel Service Request"
+      }
+    ],
+    "groupIdentifier": {
+      "system": "http://example.org/task-group",
+      "value": "GROUP-HTN-MGMT-001"
+    },
+    "partOf": [
+      {
+        "reference": "Task/parent-care-coordination-task"
+      }
+    ],
+    "status": "requested",
+    "statusReason": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/task-status-reason",
+          "code": "suspended",
+          "display": "Suspended"
+        }
+      ]
+    },
+    "businessStatus": {
+      "coding": [
+        {
+          "system": "http://example.org/task-business-status",
+          "code": "waiting-for-results",
+          "display": "Waiting for Lab Results"
+        }
+      ]
+    },
+    "intent": "order",
+    "priority": "routine",
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "182836005",
+          "display": "Review of laboratory test result"
+        }
+      ],
+      "text": "Review and Follow-up on Lipid Panel Results"
+    },
+    "description": "Review lipid panel results and determine if any medication adjustments are needed for hypertension management",
+    "focus": {
+      "reference": "ServiceRequest/{{lastCreatedServiceRequestId}}",
+      "display": "Lipid Panel Service Request"
+    },
+    "for": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "executionPeriod": {
+      "start": "2024-01-20T08:00:00Z",
+      "end": "2024-01-25T17:00:00Z"
+    },
+    "authoredOn": "2024-01-15T10:30:00Z",
+    "lastModified": "2024-01-15T10:30:00Z",
+    "requester": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "performerType": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "17561000",
+            "display": "Cardiologist"
+          }
+        ]
+      }
+    ],
+    "owner": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "location": {
+      "reference": "Location/{{lastCreatedLocationId}}",
+      "display": "Primary Care Clinic"
+    },
+    "reasonCode": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "38341003",
+          "display": "Hypertensive disorder"
+        }
+      ]
+    },
+    "reasonReference": {
+      "reference": "Condition/{{lastCreatedConditionId}}",
+      "display": "Essential Hypertension"
+    },
+    "insurance": [
+      {
+        "reference": "Coverage/{{lastCreatedCoverageId}}"
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient has family history of cardiovascular disease. Lab results will help determine cardiovascular risk and guide treatment decisions."
+      }
+    ],
+    "relevantHistory": [
+      {
+        "reference": "Provenance/task-creation-history"
+      }
+    ],
+    "restriction": {
+      "repetitions": 1,
+      "period": {
+        "end": "2024-01-25T17:00:00Z"
+      },
+      "recipient": [
+        {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}"
+        }
+      ]
+    },
+    "input": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/task-input-type",
+              "code": "reference",
+              "display": "Reference"
+            }
+          ]
+        },
+        "valueReference": {
+          "reference": "ServiceRequest/{{lastCreatedServiceRequestId}}",
+          "display": "Lipid Panel Order"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/task-input-type",
+              "code": "string",
+              "display": "String"
+            }
+          ]
+        },
+        "valueString": "Review for cardiovascular risk assessment and medication optimization"
+      }
+    ],
+    "output": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/task-output-type",
+              "code": "reference",
+              "display": "Reference"
+            }
+          ]
+        },
+        "valueReference": {
+          "reference": "DiagnosticReport/lipid-panel-report-123",
+          "display": "Lipid Panel Results"
+        }
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Task created successfully");
+    console.log("Task ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Intent:", res.body.intent);
+    console.log("Priority:", res.body.priority);
+    console.log("Code:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Description:", res.body.description);
+    console.log("For:", res.body.for?.display);
+    console.log("Owner:", res.body.owner?.display);
+    console.log("Requester:", res.body.requester?.display);
+    console.log("Authored On:", res.body.authoredOn);
+    
+    if (res.body.executionPeriod) {
+      console.log("Execution Period:", res.body.executionPeriod.start, "to", res.body.executionPeriod.end);
+    }
+    
+    if (res.body.performerType && res.body.performerType.length > 0) {
+      console.log("\n👨‍⚕️ Performer Types:");
+      res.body.performerType.forEach((type, index) => {
+        console.log(`${index + 1}. ${type.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.input && res.body.input.length > 0) {
+      console.log("\n📥 Inputs:");
+      res.body.input.forEach((input, index) => {
+        console.log(`${index + 1}. ${input.type?.coding?.[0]?.display}:`);
+        if (input.valueReference) {
+          console.log(`   Reference: ${input.valueReference.display || input.valueReference.reference}`);
+        }
+        if (input.valueString) {
+          console.log(`   Value: ${input.valueString}`);
+        }
+      });
+    }
+    
+    if (res.body.output && res.body.output.length > 0) {
+      console.log("\n📤 Outputs:");
+      res.body.output.forEach((output, index) => {
+        console.log(`${index + 1}. ${output.type?.coding?.[0]?.display}:`);
+        if (output.valueReference) {
+          console.log(`   Reference: ${output.valueReference.display || output.valueReference.reference}`);
+        }
+      });
+    }
+    
+    // Store the task ID for other requests
+    bru.setEnvVar("lastCreatedTaskId", res.body.id);
+  } else {
+    console.log("❌ Failed to create task:", res.status, res.body);
+  }
+}

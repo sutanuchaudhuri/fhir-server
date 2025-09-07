@@ -1,0 +1,169 @@
+meta {
+  name: Update AllergyIntolerance
+  type: http
+  seq: 63
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/AllergyIntolerance/{{lastCreatedAllergyIntoleranceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "{{lastCreatedAllergyIntoleranceId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/AllergyIntolerance"]
+    },
+    "clinicalStatus": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+        "code": "active",
+        "display": "Active"
+      }]
+    },
+    "verificationStatus": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+        "code": "confirmed",
+        "display": "Confirmed"
+      }]
+    },
+    "type": "allergy",
+    "category": ["food"],
+    "criticality": "high",
+    "code": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "227493005",
+        "display": "Cashew nuts"
+      }],
+      "text": "Cashew nuts"
+    },
+    "patient": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Test Patient"
+    },
+    "onsetDateTime": "2020-01-15",
+    "recordedDate": "{{$isoTimestamp}}",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Smith"
+    },
+    "asserter": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Test Patient"
+    },
+    "lastOccurrence": "2023-12-15",
+    "note": [{
+      "text": "Patient reports severe reaction to cashew nuts. Updated with confirmed status and additional reaction details.",
+      "time": "{{$isoTimestamp}}"
+    }],
+    "reaction": [{
+      "substance": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "227493005",
+          "display": "Cashew nuts"
+        }]
+      },
+      "manifestation": [{
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "39579001",
+          "display": "Anaphylaxis"
+        }]
+      }, {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "418363000",
+          "display": "Urticaria"
+        }]
+      }],
+      "description": "Patient experienced severe anaphylactic reaction with widespread urticaria after consuming cashews",
+      "onset": "2023-12-15T14:30:00Z",
+      "severity": "severe",
+      "exposureRoute": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "26643006",
+          "display": "Oral route"
+        }]
+      }
+    }]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const allergyIntolerance = res.body;
+    console.log("✅ AllergyIntolerance updated successfully");
+    console.log("AllergyIntolerance ID:", allergyIntolerance.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated AllergyIntolerance Details:");
+    console.log("Patient Reference:", allergyIntolerance.patient?.reference || "Not specified");
+    console.log("Clinical Status:", allergyIntolerance.clinicalStatus?.coding?.[0]?.display || "Not specified");
+    console.log("Verification Status:", allergyIntolerance.verificationStatus?.coding?.[0]?.display || "Not specified");
+    console.log("Type:", allergyIntolerance.type || "Not specified");
+    console.log("Category:", allergyIntolerance.category?.join(", ") || "Not specified");
+    console.log("Criticality:", allergyIntolerance.criticality || "Not specified");
+    
+    // Display substance/code
+    if (allergyIntolerance.code) {
+      console.log("\n🧪 Updated Substance:");
+      console.log("Code:", allergyIntolerance.code.coding?.[0]?.code);
+      console.log("Display:", allergyIntolerance.code.coding?.[0]?.display);
+      console.log("System:", allergyIntolerance.code.coding?.[0]?.system);
+    }
+    
+    // Display updated reactions
+    if (allergyIntolerance.reaction && allergyIntolerance.reaction.length > 0) {
+      console.log("\n⚠️  Updated Reactions:");
+      allergyIntolerance.reaction.forEach((reaction, index) => {
+        console.log(`  Reaction ${index + 1}:`);
+        console.log(`    Severity: ${reaction.severity}`);
+        console.log(`    Manifestations: ${reaction.manifestation?.length || 0}`);
+        reaction.manifestation?.forEach((manifest, mIndex) => {
+          console.log(`      ${mIndex + 1}. ${manifest.coding?.[0]?.display}`);
+        });
+        console.log(`    Description: ${reaction.description}`);
+        console.log(`    Onset: ${reaction.onset}`);
+      });
+    }
+    
+    // Display timeline updates
+    console.log("\n⏰ Updated Timeline:");
+    console.log("Onset:", allergyIntolerance.onsetDateTime || "Not specified");
+    console.log("Last Occurrence:", allergyIntolerance.lastOccurrence || "Not specified");
+    console.log("Recorded Date:", allergyIntolerance.recordedDate || "Not specified");
+    
+    // Display notes
+    if (allergyIntolerance.note && allergyIntolerance.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      allergyIntolerance.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", allergyIntolerance.meta?.versionId || "Unknown");
+    console.log("Last Updated:", allergyIntolerance.meta?.lastUpdated || "Unknown");
+    console.log("Total Reactions:", allergyIntolerance.reaction?.length || 0);
+    console.log("Total Notes:", allergyIntolerance.note?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update AllergyIntolerance:", res.status, res.body);
+  }
+}

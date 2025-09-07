@@ -1,0 +1,162 @@
+meta {
+  name: Update MedicationStatement
+  type: http
+  seq: 33
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationStatement/{{lastCreatedMedicationStatementId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "MedicationStatement",
+    "id": "{{lastCreatedMedicationStatementId}}",
+    "status": "active",
+    "medicationCodeableConcept": {
+      "coding": [
+        {
+          "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+          "code": "197361",
+          "display": "Lisinopril 10 MG Oral Tablet"
+        }
+      ],
+      "text": "Lisinopril 10mg tablet"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Patient"
+    },
+    "context": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}"
+    },
+    "effectiveDateTime": "2024-01-15T08:00:00Z",
+    "dateAsserted": "2024-01-15T09:30:00Z",
+    "informationSource": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Patient self-report"
+    },
+    "derivedFrom": [
+      {
+        "reference": "MedicationRequest/{{lastCreatedMedicationRequestId}}"
+      }
+    ],
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "38341003",
+            "display": "Hypertensive disorder"
+          }
+        ],
+        "text": "High blood pressure management"
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}"
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient reports taking medication consistently every morning with breakfast. No side effects reported. Blood pressure readings at home have been stable."
+      },
+      {
+        "text": "Updated dosage to 10mg based on recent BP readings and patient tolerance. Continue current regimen."
+      }
+    ],
+    "dosage": [
+      {
+        "sequence": 1,
+        "text": "Take 10mg by mouth once daily in the morning with food",
+        "additionalInstruction": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "311504000",
+                "display": "With or after food"
+              }
+            ]
+          }
+        ],
+        "timing": {
+          "repeat": {
+            "frequency": 1,
+            "period": 1,
+            "periodUnit": "d",
+            "when": [
+              "MORN"
+            ]
+          }
+        },
+        "route": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "26643006",
+              "display": "Oral route"
+            }
+          ]
+        },
+        "method": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "421521009",
+              "display": "Swallow - dosing instruction imperative"
+            }
+          ]
+        },
+        "doseAndRate": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                  "code": "ordered",
+                  "display": "Ordered"
+                }
+              ]
+            },
+            "doseQuantity": {
+              "value": 10,
+              "unit": "mg",
+              "system": "http://unitsofmeasure.org",
+              "code": "mg"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ MedicationStatement updated successfully");
+    console.log("MedicationStatement ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Medication:", res.body.medicationCodeableConcept?.text || res.body.medicationCodeableConcept?.coding?.[0]?.display);
+    console.log("Updated Dose:", res.body.dosage?.[0]?.doseAndRate?.[0]?.doseQuantity?.value + " " + res.body.dosage?.[0]?.doseAndRate?.[0]?.doseQuantity?.unit);
+    console.log("Frequency:", res.body.dosage?.[0]?.timing?.repeat?.frequency + " time(s) per " + res.body.dosage?.[0]?.timing?.repeat?.periodUnit);
+    console.log("Route:", res.body.dosage?.[0]?.route?.coding?.[0]?.display);
+    console.log("Reason:", res.body.reasonCode?.[0]?.text || res.body.reasonCode?.[0]?.coding?.[0]?.display);
+    console.log("Total notes:", res.body.note?.length || 0);
+    console.log("Information source:", res.body.informationSource?.display);
+  } else {
+    console.log("❌ Failed to update medication statement:", res.status, res.body);
+  }
+}

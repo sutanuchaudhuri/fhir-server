@@ -1,0 +1,171 @@
+meta {
+  name: Create Goal
+  type: http
+  seq: 38
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Goal
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Goal",
+    "identifier": [
+      {
+        "system": "http://example.org/goal-identifier",
+        "value": "GOAL-BP-2024-001"
+      }
+    ],
+    "lifecycleStatus": "active",
+    "achievementStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/goal-achievement",
+          "code": "in-progress",
+          "display": "In Progress"
+        }
+      ]
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/goal-category",
+            "code": "physiotherapy",
+            "display": "Physiotherapy"
+          }
+        ]
+      }
+    ],
+    "priority": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/goal-priority",
+          "code": "medium-priority",
+          "display": "Medium Priority"
+        }
+      ]
+    },
+    "description": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "182840001",
+          "display": "Drug allergy"
+        }
+      ],
+      "text": "Maintain blood pressure below 140/90 mmHg"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "startDate": "2024-01-15",
+    "target": [
+      {
+        "measure": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "85354-9",
+              "display": "Blood pressure panel with all children optional"
+            }
+          ]
+        },
+        "detailRange": {
+          "low": {
+            "value": 90,
+            "unit": "mmHg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mm[Hg]"
+          },
+          "high": {
+            "value": 140,
+            "unit": "mmHg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mm[Hg]"
+          }
+        },
+        "dueDate": "2024-06-15"
+      }
+    ],
+    "statusDate": "2024-01-15",
+    "statusReason": "Patient is motivated and adherent to treatment plan",
+    "expressedBy": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "addresses": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Hypertension"
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient goal to maintain healthy blood pressure through medication adherence, diet modification, and regular exercise. Patient understands the importance of daily monitoring."
+      }
+    ],
+    "outcomeCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "182840001",
+            "display": "Drug allergy"
+          }
+        ],
+        "text": "Blood pressure control"
+      }
+    ],
+    "outcomeReference": [
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}",
+        "display": "Recent blood pressure reading"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Goal created successfully");
+    console.log("Goal ID:", res.body.id);
+    console.log("Lifecycle Status:", res.body.lifecycleStatus);
+    console.log("Achievement Status:", res.body.achievementStatus?.coding?.[0]?.display);
+    console.log("Category:", res.body.category?.[0]?.coding?.[0]?.display);
+    console.log("Priority:", res.body.priority?.coding?.[0]?.display);
+    console.log("Description:", res.body.description?.text);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Start Date:", res.body.startDate);
+    console.log("Status Date:", res.body.statusDate);
+    
+    if (res.body.target && res.body.target.length > 0) {
+      console.log("\n🎯 Targets:");
+      res.body.target.forEach((target, index) => {
+        console.log(`${index + 1}. ${target.measure?.coding?.[0]?.display}`);
+        if (target.detailRange) {
+          console.log(`   Range: ${target.detailRange.low?.value}-${target.detailRange.high?.value} ${target.detailRange.low?.unit}`);
+        }
+        console.log(`   Due Date: ${target.dueDate}`);
+      });
+    }
+    
+    // Store the goal ID for other requests
+    bru.setEnvVar("lastCreatedGoalId", res.body.id);
+  } else {
+    console.log("❌ Failed to create goal:", res.status, res.body);
+  }
+}

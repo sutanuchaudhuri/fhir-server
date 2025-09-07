@@ -1,0 +1,35 @@
+meta {
+  name: Read Encounter
+  type: http
+  seq: 51
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Encounter/{{lastCreatedEncounterId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Encounter retrieved successfully");
+    console.log("Encounter ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Class:", res.body.class?.display);
+    console.log("Type:", res.body.type?.[0]?.coding?.[0]?.display);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    console.log("Subject:", res.body.subject?.display);
+  } else if (res.status === 404) {
+    console.log("❌ Encounter not found - please create an encounter first");
+  } else {
+    console.log("❌ Failed to retrieve encounter:", res.status, res.body);
+  }
+}

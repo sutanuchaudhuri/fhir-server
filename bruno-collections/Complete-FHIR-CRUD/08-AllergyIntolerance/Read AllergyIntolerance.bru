@@ -1,0 +1,85 @@
+meta {
+  name: Read AllergyIntolerance
+  type: http
+  seq: 62
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/AllergyIntolerance/{{lastCreatedAllergyIntoleranceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const allergyIntolerance = res.body;
+    console.log("✅ AllergyIntolerance retrieved successfully");
+    console.log("AllergyIntolerance ID:", allergyIntolerance.id);
+    
+    // Display key details
+    console.log("\n📋 AllergyIntolerance Details:");
+    console.log("Patient Reference:", allergyIntolerance.patient?.reference || "Not specified");
+    console.log("Clinical Status:", allergyIntolerance.clinicalStatus?.coding?.[0]?.code || "Not specified");
+    console.log("Verification Status:", allergyIntolerance.verificationStatus?.coding?.[0]?.code || "Not specified");
+    console.log("Type:", allergyIntolerance.type || "Not specified");
+    console.log("Category:", allergyIntolerance.category?.join(", ") || "Not specified");
+    console.log("Criticality:", allergyIntolerance.criticality || "Not specified");
+    
+    // Display substance/code
+    if (allergyIntolerance.code) {
+      console.log("\n🧪 Substance/Code:");
+      allergyIntolerance.code.coding?.forEach((coding, index) => {
+        console.log(`  ${index + 1}. ${coding.display || coding.code} (${coding.system})`);
+      });
+    }
+    
+    // Display reactions
+    if (allergyIntolerance.reaction && allergyIntolerance.reaction.length > 0) {
+      console.log("\n⚠️  Reactions:");
+      allergyIntolerance.reaction.forEach((reaction, index) => {
+        console.log(`  Reaction ${index + 1}:`);
+        console.log(`    Severity: ${reaction.severity || "Not specified"}`);
+        if (reaction.manifestation) {
+          reaction.manifestation.forEach((manifest, mIndex) => {
+            console.log(`    Manifestation ${mIndex + 1}: ${manifest.coding?.[0]?.display || manifest.coding?.[0]?.code || "Not specified"}`);
+          });
+        }
+        console.log(`    Exposure Route: ${reaction.exposureRoute?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`    Description: ${reaction.description || "Not specified"}`);
+      });
+    }
+    
+    // Display notes
+    if (allergyIntolerance.note && allergyIntolerance.note.length > 0) {
+      console.log("\n📝 Notes:");
+      allergyIntolerance.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+      });
+    }
+    
+    // Display onset and last occurrence
+    console.log("\n⏰ Timeline:");
+    console.log("Onset:", allergyIntolerance.onsetDateTime || allergyIntolerance.onsetAge?.value + " " + (allergyIntolerance.onsetAge?.unit || "") || "Not specified");
+    console.log("Last Occurrence:", allergyIntolerance.lastOccurrence || "Not specified");
+    console.log("Recorded Date:", allergyIntolerance.recordedDate || "Not specified");
+    
+    console.log("\n📊 Summary:");
+    console.log("Total Reactions:", allergyIntolerance.reaction?.length || 0);
+    console.log("Has Notes:", allergyIntolerance.note ? "Yes" : "No");
+    console.log("Resource Version:", allergyIntolerance.meta?.versionId || "1");
+    console.log("Last Updated:", allergyIntolerance.meta?.lastUpdated || "Not available");
+    
+  } else if (res.status === 404) {
+    console.log("❌ AllergyIntolerance not found");
+  } else {
+    console.log("❌ Failed to retrieve AllergyIntolerance:", res.status, res.body);
+  }
+}

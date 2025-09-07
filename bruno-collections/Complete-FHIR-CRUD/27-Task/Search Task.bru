@@ -1,0 +1,141 @@
+meta {
+  name: Search Task
+  type: http
+  seq: 101
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Task?patient={{lastCreatedPatientId}}&status=requested,in-progress&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Task search completed successfully");
+    console.log("Total results:", bundle.total);
+    console.log("Entries returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Task Search Results:");
+      bundle.entry.forEach((entry, index) => {
+        const task = entry.resource;
+        console.log(`\n${index + 1}. Task ID: ${task.id}`);
+        console.log(`   Status: ${task.status}`);
+        console.log(`   Intent: ${task.intent}`);
+        console.log(`   Priority: ${task.priority}`);
+        console.log(`   Code: ${task.code?.coding?.[0]?.display || task.code?.text || 'Not specified'}`);
+        console.log(`   Description: ${task.description?.substring(0, 80)}${task.description?.length > 80 ? '...' : ''}`);
+        console.log(`   For: ${task.for?.display || 'Not specified'}`);
+        console.log(`   Owner: ${task.owner?.display || 'Not assigned'}`);
+        console.log(`   Requester: ${task.requester?.display || 'Not specified'}`);
+        console.log(`   Authored: ${task.authoredOn || 'Unknown'}`);
+        console.log(`   Last Modified: ${task.lastModified || 'Unknown'}`);
+        console.log(`   Business Status: ${task.businessStatus?.coding?.[0]?.display || task.businessStatus?.text || 'Not specified'}`);
+        
+        if (task.executionPeriod) {
+          console.log(`   Execution Period: ${task.executionPeriod.start || 'Not started'} to ${task.executionPeriod.end || 'Not completed'}`);
+        }
+        
+        if (task.performerType && task.performerType.length > 0) {
+          console.log(`   Performer Types: ${task.performerType.map(p => p.coding?.[0]?.display || p.text).join(', ')}`);
+        }
+        
+        if (task.reasonCode && task.reasonCode.length > 0) {
+          console.log(`   Reasons: ${task.reasonCode.map(r => r.coding?.[0]?.display || r.text).join(', ')}`);
+        }
+        
+        if (task.focus) {
+          console.log(`   Focus: ${task.focus.display}`);
+        }
+        
+        if (task.input && task.input.length > 0) {
+          console.log(`   Inputs: ${task.input.length}`);
+        }
+        
+        if (task.output && task.output.length > 0) {
+          console.log(`   Outputs: ${task.output.length}`);
+        }
+        
+        if (task.note && task.note.length > 0) {
+          console.log(`   Notes: ${task.note.length}`);
+          console.log(`   Latest Note: ${task.note[task.note.length - 1]?.text?.substring(0, 60)}${task.note[task.note.length - 1]?.text?.length > 60 ? '...' : ''}`);
+        }
+        
+        console.log(`   Last Updated: ${task.meta?.lastUpdated || 'Unknown'}`);
+      });
+      
+      // Store the first task ID for potential use
+      if (bundle.entry.length > 0) {
+        const firstTaskId = bundle.entry[0].resource.id;
+        bru.setEnvVar("searchedTaskId", firstTaskId);
+        console.log(`\n💾 Stored first task ID in environment: ${firstTaskId}`);
+      }
+      
+    } else {
+      console.log("\n📭 No task records found matching the search criteria");
+    }
+    
+    // Display pagination info
+    if (bundle.link) {
+      console.log("\n🔗 Available Links:");
+      bundle.link.forEach(link => {
+        console.log(`   ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📊 Search Summary:");
+    console.log("Search Parameters Used:");
+    console.log("- Patient:", "{{lastCreatedPatientId}}");
+    console.log("- Status: requested, in-progress");
+    console.log("- Count limit: 10");
+    console.log("Total found:", bundle.total);
+    console.log("Returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      const statusCounts = {};
+      const priorityCounts = {};
+      
+      bundle.entry.forEach(entry => {
+        const task = entry.resource;
+        statusCounts[task.status] = (statusCounts[task.status] || 0) + 1;
+        priorityCounts[task.priority] = (priorityCounts[task.priority] || 0) + 1;
+      });
+      
+      console.log("\n📈 Status Distribution:");
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        console.log(`   ${status}: ${count}`);
+      });
+      
+      console.log("\n⚡ Priority Distribution:");
+      Object.entries(priorityCounts).forEach(([priority, count]) => {
+        console.log(`   ${priority}: ${count}`);
+      });
+    }
+    
+  } else {
+    console.log("❌ Task search failed:", res.status);
+    console.log("Response:", res.body);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n❌ Error Details:");
+      if (res.body.issue && res.body.issue.length > 0) {
+        res.body.issue.forEach((issue, index) => {
+          console.log(`Issue ${index + 1}:`);
+          console.log("  Severity:", issue.severity);
+          console.log("  Code:", issue.code);
+          console.log("  Details:", issue.details?.text || issue.diagnostics);
+        });
+      }
+    }
+  }
+}

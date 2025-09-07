@@ -1,0 +1,128 @@
+meta {
+  name: Debug - Alternative Security Codes
+  type: http
+  seq: 102
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "client"
+        }
+      ]
+    },
+    "active": true,
+    "name": [
+      {
+        "family": "ClientCodeTest",
+        "given": ["Debug"]
+      }
+    ],
+    "gender": "unknown"
+  }
+}
+
+script:post-response {
+  console.log("=== DEBUG - ALTERNATIVE SECURITY CODES ===");
+  console.log("");
+  console.log("🔍 Testing with 'client' code instead of 'bwell'");
+  console.log("📤 Security tags:");
+  console.log("  - access: code='client'");
+  console.log("  - owner: code='client'");  
+  console.log("  - sourceAssigningAuthority: code='client'");
+  console.log("");
+  console.log("📤 Also included: active=true, gender='unknown'");
+  console.log("");
+  
+  console.log("📥 Response Status:", res.status);
+  console.log("📥 Response Body:", JSON.stringify(res.body, null, 2));
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("🎉 SUCCESS! PATIENT CREATED!");
+    console.log("");
+    console.log("✅ SOLUTION FOUND:");
+    console.log("  - Security metadata format is correct");
+    console.log("  - Code value 'client' works");
+    console.log("  - Including active=true and gender helps");
+    console.log("");
+    console.log("📋 WORKING CONFIGURATION:");
+    console.log("  {");
+    console.log("    \"resourceType\": \"Patient\",");
+    console.log("    \"meta\": {");
+    console.log("      \"security\": [");
+    console.log("        {\"system\": \"https://www.icanbwell.com/access\", \"code\": \"client\"},");
+    console.log("        {\"system\": \"https://www.icanbwell.com/owner\", \"code\": \"client\"},");
+    console.log("        {\"system\": \"https://www.icanbwell.com/sourceAssigningAuthority\", \"code\": \"client\"}");
+    console.log("      ]");
+    console.log("    },");
+    console.log("    \"active\": true,");
+    console.log("    \"name\": [{\"family\": \"LastName\", \"given\": [\"FirstName\"]}],");
+    console.log("    \"gender\": \"unknown\"");
+    console.log("  }");
+    console.log("");
+    console.log("🔄 UPDATE OTHER TESTS:");
+    console.log("  - Change security code from 'bwell' to 'client'");
+    console.log("  - Ensure active and gender fields are included");
+    
+    bru.setVar("debugPatientId", res.body.id);
+    
+  } else if (res.status === 500) {
+    console.log("❌ STILL 500 ERROR - DEEPER ISSUE");
+    console.log("");
+    console.log("🔧 ADVANCED TROUBLESHOOTING NEEDED:");
+    console.log("");
+    console.log("1. Server Environment Check:");
+    console.log("   docker-compose logs fhir");
+    console.log("");
+    console.log("2. Database Connection:");
+    console.log("   docker-compose logs mongo");
+    console.log("");
+    console.log("3. Check if validation middleware is working:");
+    console.log("   The issue might be in preSaveHandlers");
+    console.log("");
+    console.log("4. Try bypassing validation temporarily:");
+    console.log("   Check docker-compose.override.yml");
+    console.log("   Look for VALIDATE_SCHEMA setting");
+    console.log("");
+    console.log("5. Manual curl test to isolate Bruno vs server:");
+    console.log("   curl -X POST http://localhost:3000/4_0_0/Patient \\");
+    console.log("     -H 'Content-Type: application/fhir+json' \\");
+    console.log("     -H 'Authorization: Bearer {{authToken}}' \\");
+    console.log("     -d '{\"resourceType\":\"Patient\",\"meta\":{\"security\":[{\"system\":\"https://www.icanbwell.com/access\",\"code\":\"client\"},{\"system\":\"https://www.icanbwell.com/owner\",\"code\":\"client\"},{\"system\":\"https://www.icanbwell.com/sourceAssigningAuthority\",\"code\":\"client\"}]},\"active\":true,\"name\":[{\"family\":\"Test\"}],\"gender\":\"unknown\"}'");
+    
+  } else {
+    console.log("❌ OTHER STATUS:", res.status);
+    console.log("This gives us more information about the specific issue");
+  }
+  
+  console.log("");
+  console.log("==========================================");
+}

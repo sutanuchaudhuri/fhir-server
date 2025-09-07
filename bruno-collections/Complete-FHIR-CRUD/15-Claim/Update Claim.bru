@@ -1,0 +1,557 @@
+meta {
+  name: Update Claim
+  type: http
+  seq: 82
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Claim/{{lastCreatedClaimId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Claim",
+    "id": "{{lastCreatedClaimId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Claim"]
+    },
+    "status": "active",
+    "type": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+        "code": "institutional",
+        "display": "Institutional"
+      }]
+    },
+    "subType": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/ex-claimsubtype",
+        "code": "emergency",
+        "display": "Emergency Claim"
+      }]
+    },
+    "use": "claim",
+    "patient": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "billablePeriod": {
+      "start": "2024-01-15T14:00:00Z",
+      "end": "2024-01-15T18:00:00Z"
+    },
+    "created": "{{$isoTimestamp}}",
+    "enterer": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "insurer": {
+      "reference": "Organization/insurance-company-abc",
+      "display": "ABC Health Insurance"
+    },
+    "provider": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "City General Hospital"
+    },
+    "priority": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+        "code": "urgent",
+        "display": "Urgent"
+      }]
+    },
+    "fundsReserve": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/fundsreserve",
+        "code": "provider",
+        "display": "Provider"
+      }]
+    },
+    "related": [{
+      "reference": {
+        "reference": "Claim/prior-auth-12345"
+      },
+      "relationship": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-relatedclaimrelationship",
+          "code": "prior",
+          "display": "Prior Authorization"
+        }]
+      }
+    }],
+    "prescription": {
+      "reference": "MedicationRequest/{{lastCreatedMedicationRequestId}}"
+    },
+    "originalPrescription": {
+      "reference": "MedicationRequest/original-prescription-456"
+    },
+    "payee": {
+      "type": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/payeetype",
+          "code": "provider",
+          "display": "Provider"
+        }]
+      },
+      "party": {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "City General Hospital"
+      }
+    },
+    "referral": {
+      "reference": "ServiceRequest/referral-imaging-789"
+    },
+    "facility": {
+      "reference": "Location/{{lastCreatedLocationId}}",
+      "display": "Emergency Department"
+    },
+    "careTeam": [{
+      "sequence": 1,
+      "provider": {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Emily Smith"
+      },
+      "responsible": true,
+      "role": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/claimcareteamrole",
+          "code": "primary",
+          "display": "Primary Care Practitioner"
+        }]
+      },
+      "qualification": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-providerqualification",
+          "code": "311405",
+          "display": "Emergency Medicine"
+        }]
+      }
+    }, {
+      "sequence": 2,
+      "provider": {
+        "reference": "Practitioner/radiologist-dr-johnson",
+        "display": "Dr. Johnson - Radiologist"
+      },
+      "responsible": false,
+      "role": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/claimcareteamrole",
+          "code": "assist",
+          "display": "Assisting Provider"
+        }]
+      }
+    }],
+    "supportingInfo": [{
+      "sequence": 1,
+      "category": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/claiminformationcategory",
+          "code": "info",
+          "display": "Information"
+        }]
+      },
+      "code": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/claim-exception",
+          "code": "student",
+          "display": "Student"
+        }]
+      }
+    }, {
+      "sequence": 2,
+      "category": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/claiminformationcategory",
+          "code": "onset",
+          "display": "Onset Date"
+        }]
+      },
+      "timingDate": "2024-01-15"
+    }],
+    "diagnosis": [{
+      "sequence": 1,
+      "diagnosisCodeableConcept": {
+        "coding": [{
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "R51",
+          "display": "Headache"
+        }]
+      },
+      "type": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-diagnosistype",
+          "code": "principal",
+          "display": "Principal Diagnosis"
+        }]
+      }],
+      "onAdmission": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-diagnosis-on-admission",
+          "code": "y",
+          "display": "Yes"
+        }]
+      },
+      "packageCode": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-diagnosisrelatedgroup",
+          "code": "100",
+          "display": "General Headache Package"
+        }]
+      }
+    }, {
+      "sequence": 2,
+      "diagnosisCodeableConcept": {
+        "coding": [{
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "Z51.11",
+          "display": "Encounter for antineoplastic chemotherapy"
+        }]
+      },
+      "type": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-diagnosistype",
+          "code": "secondary",
+          "display": "Secondary Diagnosis"
+        }]
+      }]
+    }],
+    "procedure": [{
+      "sequence": 1,
+      "date": "2024-01-15T15:30:00Z",
+      "procedureCodeableConcept": {
+        "coding": [{
+          "system": "http://www.cms.gov/Medicare/Coding/ICD10",
+          "code": "BR20XZZ",
+          "display": "Plain Radiography of Head using High Osmolar Contrast"
+        }]
+      },
+      "udi": [{
+        "reference": "Device/imaging-device-ct-001"
+      }]
+    }],
+    "insurance": [{
+      "sequence": 1,
+      "focal": true,
+      "identifier": {
+        "system": "http://abc-insurance.com/member-id",
+        "value": "ABC123456789"
+      },
+      "coverage": {
+        "reference": "Coverage/{{lastCreatedCoverageId}}",
+        "display": "Primary Health Insurance"
+      },
+      "businessArrangement": "Standard Network Agreement",
+      "preAuthRef": ["AUTH789456123"],
+      "claimResponse": {
+        "reference": "ClaimResponse/prior-response-456"
+      }
+    }],
+    "accident": {
+      "date": "2024-01-15",
+      "type": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActIncidentCode",
+          "code": "SPT",
+          "display": "Sports accident"
+        }]
+      },
+      "locationAddress": {
+        "text": "Community Sports Center, 789 Athletic Way, Sports City, CA 90123"
+      }
+    },
+    "item": [{
+      "sequence": 1,
+      "careTeamSequence": [1],
+      "diagnosisSequence": [1],
+      "procedureSequence": [1],
+      "informationSequence": [1, 2],
+      "revenue": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-revenue-center",
+          "code": "0324",
+          "display": "Radiology - Diagnostic"
+        }]
+      },
+      "category": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-benefitcategory",
+          "code": "1",
+          "display": "Medical Care"
+        }]
+      },
+      "productOrService": {
+        "coding": [{
+          "system": "http://www.ama-assn.org/go/cpt",
+          "code": "70450",
+          "display": "CT Head without contrast"
+        }]
+      },
+      "modifier": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-procedure-modifier",
+          "code": "rooh",
+          "display": "Rush Order"
+        }]
+      }],
+      "programCode": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-programcode",
+          "code": "as",
+          "display": "Auto Accident"
+        }]
+      }],
+      "servicedDate": "2024-01-15",
+      "locationCodeableConcept": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/ex-serviceplace",
+          "code": "21",
+          "display": "Inpatient Hospital"
+        }]
+      },
+      "quantity": {
+        "value": 1
+      },
+      "unitPrice": {
+        "value": 1250.00,
+        "currency": "USD"
+      },
+      "factor": 1.1,
+      "net": {
+        "value": 1375.00,
+        "currency": "USD"
+      },
+      "udi": [{
+        "reference": "Device/ct-scanner-siemens-002"
+      }],
+      "bodySite": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "69536005",
+          "display": "Head structure"
+        }]
+      },
+      "subSite": [{
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "12738006",
+          "display": "Brain structure"
+        }]
+      }],
+      "encounter": [{
+        "reference": "Encounter/{{lastCreatedEncounterId}}"
+      }],
+      "detail": [{
+        "sequence": 1,
+        "revenue": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/ex-revenue-center",
+            "code": "0324",
+            "display": "Radiology - Diagnostic"
+          }]
+        },
+        "category": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/ex-benefitcategory",
+            "code": "1",
+            "display": "Medical Care"
+          }]
+        },
+        "productOrService": {
+          "coding": [{
+            "system": "http://www.ama-assn.org/go/cpt",
+            "code": "70450",
+            "display": "CT Head without contrast - Technical Component"
+          }]
+        },
+        "modifier": [{
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/ex-procedure-modifier",
+            "code": "tc",
+            "display": "Technical Component"
+          }]
+        }],
+        "quantity": {
+          "value": 1
+        },
+        "unitPrice": {
+          "value": 950.00,
+          "currency": "USD"
+        },
+        "factor": 1.1,
+        "net": {
+          "value": 1045.00,
+          "currency": "USD"
+        }
+      }, {
+        "sequence": 2,
+        "category": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/ex-benefitcategory",
+            "code": "1", 
+            "display": "Medical Care"
+          }]
+        },
+        "productOrService": {
+          "coding": [{
+            "system": "http://www.ama-assn.org/go/cpt",
+            "code": "70450",
+            "display": "CT Head without contrast - Professional Component"
+          }]
+        },
+        "modifier": [{
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/ex-procedure-modifier",
+            "code": "pc",
+            "display": "Professional Component"
+          }]
+        }],
+        "quantity": {
+          "value": 1
+        },
+        "unitPrice": {
+          "value": 300.00,
+          "currency": "USD"
+        },
+        "factor": 1.1,
+        "net": {
+          "value": 330.00,
+          "currency": "USD"
+        }
+      }]
+    }],
+    "total": {
+      "value": 1375.00,
+      "currency": "USD"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const claim = res.body;
+    console.log("✅ Claim updated successfully");
+    console.log("Claim ID:", claim.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated Claim Details:");
+    console.log("Status:", claim.status);
+    console.log("Type:", claim.type?.coding?.[0]?.display);
+    console.log("SubType:", claim.subType?.coding?.[0]?.display);
+    console.log("Use:", claim.use);
+    console.log("Priority:", claim.priority?.coding?.[0]?.display);
+    console.log("Patient:", claim.patient?.display || claim.patient?.reference);
+    console.log("Provider:", claim.provider?.display || claim.provider?.reference);
+    console.log("Insurer:", claim.insurer?.display || claim.insurer?.reference);
+    
+    // Display billable period
+    if (claim.billablePeriod) {
+      console.log("\n📅 Updated Billable Period:");
+      console.log("Start:", claim.billablePeriod.start);
+      console.log("End:", claim.billablePeriod.end);
+    }
+    
+    // Display care team
+    if (claim.careTeam && claim.careTeam.length > 0) {
+      console.log("\n👥 Updated Care Team:");
+      claim.careTeam.forEach((member, index) => {
+        console.log(`  ${index + 1}. ${member.provider?.display || member.provider?.reference}`);
+        console.log(`     Role: ${member.role?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`     Responsible: ${member.responsible ? "Yes" : "No"}`);
+        if (member.qualification) {
+          console.log(`     Qualification: ${member.qualification.coding?.[0]?.display}`);
+        }
+      });
+    }
+    
+    // Display diagnoses
+    if (claim.diagnosis && claim.diagnosis.length > 0) {
+      console.log("\n🏥 Updated Diagnoses:");
+      claim.diagnosis.forEach((diagnosis, index) => {
+        console.log(`  ${index + 1}. ${diagnosis.diagnosisCodeableConcept?.coding?.[0]?.display} (${diagnosis.diagnosisCodeableConcept?.coding?.[0]?.code})`);
+        if (diagnosis.type && diagnosis.type.length > 0) {
+          console.log(`     Type: ${diagnosis.type[0].coding?.[0]?.display}`);
+        }
+      });
+    }
+    
+    // Display procedures
+    if (claim.procedure && claim.procedure.length > 0) {
+      console.log("\n🔬 Updated Procedures:");
+      claim.procedure.forEach((procedure, index) => {
+        console.log(`  ${index + 1}. ${procedure.procedureCodeableConcept?.coding?.[0]?.display} (${procedure.procedureCodeableConcept?.coding?.[0]?.code})`);
+        console.log(`     Date: ${procedure.date}`);
+      });
+    }
+    
+    // Display insurance
+    if (claim.insurance && claim.insurance.length > 0) {
+      console.log("\n🛡️  Updated Insurance:");
+      claim.insurance.forEach((insurance, index) => {
+        console.log(`  ${index + 1}. ${insurance.coverage?.display || insurance.coverage?.reference}`);
+        console.log(`     Focal: ${insurance.focal ? "Yes" : "No"}`);
+        console.log(`     Member ID: ${insurance.identifier?.value || "Not specified"}`);
+        if (insurance.preAuthRef && insurance.preAuthRef.length > 0) {
+          console.log(`     Pre-Auth: ${insurance.preAuthRef.join(", ")}`);
+        }
+      });
+    }
+    
+    // Display items summary
+    if (claim.item && claim.item.length > 0) {
+      console.log("\n💰 Updated Items:");
+      let totalNet = 0;
+      claim.item.forEach((item, index) => {
+        console.log(`  ${index + 1}. ${item.productOrService?.coding?.[0]?.display} (${item.productOrService?.coding?.[0]?.code})`);
+        console.log(`     Quantity: ${item.quantity?.value || "Not specified"}`);
+        console.log(`     Unit Price: $${item.unitPrice?.value || "0.00"}`);
+        console.log(`     Net: $${item.net?.value || "0.00"}`);
+        
+        if (item.net?.value) {
+          totalNet += item.net.value;
+        }
+        
+        if (item.detail && item.detail.length > 0) {
+          console.log(`     Details: ${item.detail.length} line item(s)`);
+        }
+      });
+      console.log(`  Total Calculated: $${totalNet.toFixed(2)}`);
+    }
+    
+    // Display total
+    if (claim.total) {
+      console.log("\n💵 Updated Total:");
+      console.log("Amount:", `$${claim.total.value} ${claim.total.currency}`);
+    }
+    
+    // Display accident information
+    if (claim.accident) {
+      console.log("\n🚑 Accident Information:");
+      console.log("Date:", claim.accident.date);
+      console.log("Type:", claim.accident.type?.coding?.[0]?.display);
+      console.log("Location:", claim.accident.locationAddress?.text);
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", claim.meta?.versionId || "Unknown");
+    console.log("Last Updated:", claim.meta?.lastUpdated || "Unknown");
+    console.log("Care Team Members:", claim.careTeam?.length || 0);
+    console.log("Diagnoses:", claim.diagnosis?.length || 0);
+    console.log("Procedures:", claim.procedure?.length || 0);
+    console.log("Insurance Plans:", claim.insurance?.length || 0);
+    console.log("Line Items:", claim.item?.length || 0);
+    console.log("Supporting Info:", claim.supportingInfo?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Claim:", res.status, res.body);
+  }
+}

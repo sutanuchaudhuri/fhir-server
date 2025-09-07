@@ -1,0 +1,7 @@
+script:pre-request {
+  // Check if we have an auth token before making requests
+  const token = bru.getEnvVar("authToken") || bru.getEnvVar("authtoken");
+  if (!token && req.getUrl() !== "{{baseUrl}}/oauth/token" && req.getUrl() !== "{{baseurl}}/oauth/token") {
+    console.log("Warning: No auth token found. Run Authentication request first.");
+  }
+}

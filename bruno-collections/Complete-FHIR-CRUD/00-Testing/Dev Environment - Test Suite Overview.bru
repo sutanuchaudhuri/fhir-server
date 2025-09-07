@@ -1,0 +1,121 @@
+meta {
+  name: Dev Environment - Test Suite Overview
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== DEV ENVIRONMENT - TEST SUITE OVERVIEW ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🏥 FHIR Server:", "{{baseUrl}}");
+  console.log("📋 FHIR Version:", "{{fhirVersion}}");
+  console.log("⏰ Test Run:", new Date().toISOString());
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ FHIR SERVER ACCESSIBLE");
+    console.log("");
+    console.log("📊 Server Metadata:");
+    console.log("  Implementation:", res.body.software?.name || "Unknown");
+    console.log("  Version:", res.body.software?.version || "Unknown");
+    console.log("  FHIR Version:", res.body.fhirVersion || "Unknown");
+    console.log("  Publication Date:", res.body.date || "Unknown");
+    console.log("");
+    
+    // Count supported resources
+    const supportedResources = res.body.rest?.[0]?.resource || [];
+    console.log("🔧 Supported Resources:", supportedResources.length);
+    
+    // Show key resources for testing
+    const keyResources = ['Patient', 'Organization', 'Practitioner', 'Observation', 'Encounter'];
+    console.log("");
+    console.log("🎯 Key Resources for Dev Testing:");
+    keyResources.forEach(resourceType => {
+      const resource = supportedResources.find(r => r.type === resourceType);
+      if (resource) {
+        const interactions = resource.interaction?.map(i => i.code).join(', ') || 'None';
+        console.log(`  ✅ ${resourceType}: ${interactions}`);
+      } else {
+        console.log(`  ❌ ${resourceType}: Not supported`);
+      }
+    });
+    
+    console.log("");
+    console.log("🧪 DEV ENVIRONMENT TEST PLAN:");
+    console.log("");
+    console.log("STEP 1: Authentication");
+    console.log("  🔑 Run 'Dev Environment - Get Auth Token'");
+    console.log("  ✅ Verify Auth0 integration");
+    console.log("  ✅ Confirm token scopes");
+    console.log("");
+    
+    console.log("STEP 2: Resource Creation");
+    console.log("  👤 Run 'Dev Environment - Test Patient Creation'");
+    console.log("  🏥 Run 'Dev Environment - Test Organization Creation'");
+    console.log("  ✅ Verify security metadata requirements");
+    console.log("  ✅ Test all required fields");
+    console.log("");
+    
+    console.log("STEP 3: Resource Operations");
+    console.log("  📖 Test READ operations");
+    console.log("  ✏️  Test UPDATE operations");
+    console.log("  🗑️ Test DELETE operations");
+    console.log("  ✅ Verify CRUD lifecycle");
+    console.log("");
+    
+    console.log("STEP 4: Search & Query");
+    console.log("  🔍 Run 'Dev Environment - Test Search Resources'");
+    console.log("  ✅ Test basic search parameters");
+    console.log("  ✅ Verify pagination");
+    console.log("  ✅ Test complex queries");
+    console.log("");
+    
+    console.log("STEP 5: Error Handling");
+    console.log("  🚫 Test invalid requests");
+    console.log("  🔒 Test unauthorized access");
+    console.log("  ✅ Verify error responses");
+    console.log("");
+    
+    console.log("🔒 SECURITY REQUIREMENTS:");
+    console.log("  All resources MUST include meta.security with:");
+    console.log("  - access: https://www.icanbwell.com/access");
+    console.log("  - owner: https://www.icanbwell.com/owner");
+    console.log("  - sourceAssigningAuthority: https://www.icanbwell.com/sourceAssigningAuthority");
+    console.log("");
+    
+    console.log("🚀 READY TO START DEV ENVIRONMENT TESTING!");
+    console.log("Run the tests in sequence for comprehensive validation.");
+    
+  } else if (res.status === 401) {
+    console.log("❌ AUTHENTICATION REQUIRED");
+    console.log("🔧 Run 'Dev Environment - Get Auth Token' first");
+    
+  } else {
+    console.log("❌ FHIR SERVER NOT ACCESSIBLE");
+    console.log("Status:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Troubleshooting:");
+    console.log("  1. Verify FHIR server is running");
+    console.log("  2. Check baseUrl in dev environment");
+    console.log("  3. Confirm network connectivity");
+    console.log("  4. Review server logs");
+  }
+  
+  console.log("");
+  console.log("===============================================");
+}

@@ -1,0 +1,49 @@
+meta {
+  name: Get Auth Token (Auth0)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}
+  body: formUrlEncoded
+  auth: none
+}
+
+headers {
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:form-urlencoded {
+  client_id: {{clientId}}
+  client_secret: {{clientSecret}}
+  audience: {{audience}}
+  grant_type: client_credentials
+  scope: user/*.* access/*.* admin/*.*
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Auth0 Authentication successful");
+    console.log("Token type:", res.body.token_type);
+    console.log("Expires in:", res.body.expires_in, "seconds");
+    
+    // Store the access token for use in other requests
+    bru.setVar("authToken", res.body.access_token);
+    console.log("🔑 Auth token stored in environment");
+  } else {
+    console.log("❌ Auth0 Authentication failed:", res.status);
+    console.log("Error:", res.body);
+    console.log("");
+    console.log("🔧 Troubleshooting steps:");
+    console.log("1. Check if 'client_credentials' grant type is enabled in Auth0 application settings");
+    console.log("2. Verify client_id and client_secret are correct");
+    console.log("3. Ensure the audience is configured correctly");
+    console.log("4. Check if the required scopes are allowed for this client");
+    console.log("");
+    console.log("📋 Auth0 Application Settings Required:");
+    console.log("- Grant Types: Client Credentials ✓");
+    console.log("- Advanced Settings > Grant Types > Client Credentials ✓");
+    console.log("- APIs: Ensure your API has the correct identifier");
+  }
+}

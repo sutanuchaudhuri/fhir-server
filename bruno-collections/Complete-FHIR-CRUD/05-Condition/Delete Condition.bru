@@ -1,0 +1,83 @@
+meta {
+  name: Delete Condition
+  type: http
+  seq: 90
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition/{{lastCreatedConditionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Condition deleted successfully");
+    console.log("Status:", res.status);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n📋 Operation Details:");
+      console.log("Severity:", res.body.issue?.[0]?.severity);
+      console.log("Code:", res.body.issue?.[0]?.code);
+      console.log("Details:", res.body.issue?.[0]?.details?.text || res.body.issue?.[0]?.diagnostics);
+    }
+    
+    console.log("\n🗑️ Cleanup Actions:");
+    console.log("Removing conditionId from environment...");
+    
+    // Clear the environment variable
+    bru.setEnvVar("lastCreatedConditionId", "");
+    
+    console.log("✅ Environment cleaned up successfully");
+    console.log("Note: Related observations and care plans may need separate cleanup");
+    
+  } else if (res.status === 404) {
+    console.log("⚠️ Condition not found (already deleted or never existed)");
+    console.log("Cleaning up environment variable anyway...");
+    bru.setEnvVar("lastCreatedConditionId", "");
+    
+  } else if (res.status === 410) {
+    console.log("⚠️ Condition was already deleted");
+    console.log("Resource is marked as deleted but may still exist in history");
+    bru.setEnvVar("lastCreatedConditionId", "");
+    
+  } else {
+    console.log("❌ Failed to delete Condition");
+    console.log("Status:", res.status);
+    console.log("Response:", res.body);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n❌ Error Details:");
+      if (res.body.issue && res.body.issue.length > 0) {
+        res.body.issue.forEach((issue, index) => {
+          console.log(`Issue ${index + 1}:`);
+          console.log("  Severity:", issue.severity);
+          console.log("  Code:", issue.code);
+          console.log("  Details:", issue.details?.text || issue.diagnostics);
+          if (issue.location) {
+            console.log("  Location:", issue.location.join(", "));
+          }
+          if (issue.expression) {
+            console.log("  Expression:", issue.expression.join(", "));
+          }
+        });
+      }
+    }
+    
+    console.log("\n🔧 Troubleshooting Tips:");
+    console.log("1. Verify the Condition ID exists");
+    console.log("2. Check if you have permission to delete this resource");
+    console.log("3. Ensure the condition is not referenced by other resources");
+    console.log("4. Check if the condition is part of an active care plan");
+    console.log("5. Verify server supports DELETE operations");
+    console.log("6. Consider if this is a chronic condition that should be marked as resolved instead");
+  }
+}

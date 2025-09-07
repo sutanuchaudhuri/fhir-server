@@ -1,0 +1,43 @@
+meta {
+  name: Search Patients
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient?family=Doe&_count=10&_sort=family
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Patient search completed successfully");
+    console.log("Total patients found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("First 5 patients:");
+      res.body.entry.slice(0, 5).forEach((entry, index) => {
+        const patient = entry.resource;
+        console.log(`${index + 1}. ${patient.name?.[0]?.given?.join(" ")} ${patient.name?.[0]?.family} (ID: ${patient.id})`);
+      });
+      
+      // Store the first patient ID for potential use
+      if (res.body.entry[0]) {
+        bru.setVar("searchedPatientId", res.body.entry[0].resource.id);
+      }
+    } else {
+      console.log("No patients found with family name 'Doe'");
+    }
+  } else {
+    console.log("❌ Failed to search patients:", res.status, res.body);
+  }
+}

@@ -1,0 +1,66 @@
+meta {
+  name: Debug - Server Status Check
+  type: http
+  seq: 99
+}
+
+get {
+  url: {{baseUrl}}/health
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+script:post-response {
+  console.log("=== DEBUG - SERVER STATUS CHECK ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🔗 Server URL:", "{{baseUrl}}");
+  console.log("⏰ Check Time:", new Date().toISOString());
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ SERVER IS RUNNING");
+    console.log("Health Check Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔄 Next Steps:");
+    console.log("1. Run 'Dev Environment - Get Auth Token' to authenticate");
+    console.log("2. Run 'Debug - Minimal Patient Creation' to test resource creation");
+    
+  } else if (res.status === 404) {
+    console.log("⚠️  HEALTH ENDPOINT NOT FOUND");
+    console.log("Server might be running but health endpoint not configured");
+    console.log("");
+    console.log("🔍 Try alternative endpoints:");
+    console.log("- GET {{baseUrl}}/{{fhirVersion}}/metadata (FHIR metadata)");
+    console.log("- GET {{baseUrl}}/ (root endpoint)");
+    
+  } else {
+    console.log("❌ SERVER NOT ACCESSIBLE");
+    console.log("Status:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 TROUBLESHOOTING:");
+    console.log("");
+    console.log("1. Check if containers are running:");
+    console.log("   docker-compose ps");
+    console.log("");
+    console.log("2. Start the FHIR server:");
+    console.log("   cd /Users/ekantikachaudhuri/Developer/fhir-server");
+    console.log("   docker-compose up -d fhir mongo");
+    console.log("");
+    console.log("3. Check container logs:");
+    console.log("   docker logs fhir-server-fhir-1");
+    console.log("");
+    console.log("4. Verify port 3000 is not blocked:");
+    console.log("   curl http://localhost:3000/health");
+    console.log("");
+    console.log("5. Check network connectivity:");
+    console.log("   ping localhost");
+  }
+  
+  console.log("");
+  console.log("=====================================");
+}

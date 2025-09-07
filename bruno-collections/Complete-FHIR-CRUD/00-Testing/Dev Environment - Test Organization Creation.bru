@@ -1,0 +1,216 @@
+meta {
+  name: Dev Environment - Test Organization Creation
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Organization
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Organization",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "client"
+        }
+      ]
+    },
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ]
+      }
+    ],
+    "name": "Dev Test Healthcare Organization",
+    "alias": ["DevTest Org", "DTHO"],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "555-DEV-HEALTH",
+        "use": "work"
+      },
+      {
+        "system": "email",
+        "value": "dev.test@healthcare.org",
+        "use": "work"
+      },
+      {
+        "system": "url",
+        "value": "https://dev-test-healthcare.org"
+      }
+    ],
+    "address": [
+      {
+        "use": "work",
+        "type": "both",
+        "text": "Dev Test Healthcare Campus",
+        "line": ["456 Healthcare Boulevard", "Suite 100"],
+        "city": "Medical City",
+        "state": "TX",
+        "postalCode": "54321",
+        "country": "US"
+      }
+    ],
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/contactentity-type",
+              "code": "ADMIN",
+              "display": "Administrative"
+            }
+          ]
+        },
+        "name": {
+          "use": "official",
+          "family": "DevAdmin",
+          "given": ["Test"]
+        },
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "555-DEV-ADMIN",
+            "use": "work"
+          },
+          {
+            "system": "email",
+            "value": "admin@dev-test-healthcare.org"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  console.log("=== DEV ENVIRONMENT - ORGANIZATION CREATION TEST ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🏥 Server:", "{{baseUrl}}");
+  console.log("📋 Resource Type: Organization");
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("✅ SUCCESS: Organization created in dev environment!");
+    console.log("");
+    console.log("📊 Response Details:");
+    console.log("  Organization ID:", res.body.id);
+    console.log("  Name:", res.body.name);
+    console.log("  Type:", res.body.type?.[0]?.coding?.[0]?.display);
+    console.log("  Active:", res.body.active);
+    console.log("  Aliases:", res.body.alias?.join(", ") || "None");
+    console.log("");
+    
+    // Contact information
+    if (res.body.telecom && res.body.telecom.length > 0) {
+      console.log("📞 Contact Information:");
+      res.body.telecom.forEach((contact, index) => {
+        console.log(`    ${index + 1}. ${contact.system}: ${contact.value} (${contact.use || 'unspecified'})`);
+      });
+      console.log("");
+    }
+    
+    // Address information
+    if (res.body.address && res.body.address.length > 0) {
+      console.log("📍 Address:");
+      const addr = res.body.address[0];
+      console.log(`    ${addr.line?.join(", ")}`);
+      console.log(`    ${addr.city}, ${addr.state} ${addr.postalCode}`);
+      console.log(`    ${addr.country}`);
+      console.log("");
+    }
+    
+    // Verify security metadata
+    const securityTags = res.body.meta?.security || [];
+    console.log("🔒 Security Validation:");
+    console.log("  Total Security Tags:", securityTags.length);
+    
+    const hasAccess = securityTags.some(tag => tag.system?.includes('access'));
+    const hasOwner = securityTags.some(tag => tag.system?.includes('owner'));
+    const hasSourceAuth = securityTags.some(tag => tag.system?.includes('sourceAssigningAuthority'));
+    
+    console.log("  - Access tag:", hasAccess ? "✅ Present" : "❌ Missing");
+    console.log("  - Owner tag:", hasOwner ? "✅ Present" : "❌ Missing");
+    console.log("  - SourceAssigningAuthority tag:", hasSourceAuth ? "✅ Present" : "❌ Missing");
+    
+    if (hasAccess && hasOwner && hasSourceAuth) {
+      console.log("  🎉 All required security metadata validated!");
+    }
+    
+    console.log("");
+    console.log("⏱️  Response Time:", res.responseTime, "ms");
+    
+    // Store for subsequent tests
+    bru.setVar("lastCreatedOrganizationId", res.body.id);
+    bru.setVar("devTestOrganizationId", res.body.id);
+    
+    console.log("💾 Organization ID stored for further testing");
+    console.log("");
+    console.log("🔄 Next Dev Environment Tests:");
+    console.log("  1. Read the created organization");
+    console.log("  2. Update organization details");
+    console.log("  3. Create practitioner linked to this organization");
+    console.log("  4. Test organization search functionality");
+    
+  } else if (res.status === 400) {
+    console.log("❌ BAD REQUEST: Invalid organization data");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Common Organization Issues:");
+    console.log("  - Missing required fields (name, active)");
+    console.log("  - Invalid organization type codes");
+    console.log("  - Malformed contact or address data");
+    console.log("  - Security metadata format errors");
+    
+  } else if (res.status === 401) {
+    console.log("❌ UNAUTHORIZED: Authentication failed");
+    console.log("🔧 Run 'Dev Environment - Get Auth Token' first");
+    
+  } else if (res.status === 500) {
+    console.log("❌ INTERNAL SERVER ERROR");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Server Troubleshooting:");
+    console.log("  1. Check FHIR server status: docker ps");
+    console.log("  2. Review server logs: docker logs fhir-server-fhir-1");
+    console.log("  3. Verify database connectivity");
+    console.log("  4. Confirm security metadata requirements");
+    
+  } else {
+    console.log("❌ UNEXPECTED STATUS:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("================================================");
+}

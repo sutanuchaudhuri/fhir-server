@@ -1,0 +1,116 @@
+meta {
+  name: Debug - Security Metadata Variations
+  type: http
+  seq: 101
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "bwell"
+        },
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "bwell"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "bwell"
+        }
+      ]
+    },
+    "name": [
+      {
+        "family": "MinimalTest"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  console.log("=== DEBUG - SECURITY METADATA VARIATIONS ===");
+  console.log("");
+  console.log("🔍 Testing minimal Patient with security metadata");
+  console.log("📤 Request includes:");
+  console.log("  - resourceType: Patient");
+  console.log("  - meta.security with 3 required tags");
+  console.log("  - minimal name field only");
+  console.log("");
+  
+  console.log("📥 Response Status:", res.status);
+  console.log("📥 Response Body:", JSON.stringify(res.body, null, 2));
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("✅ SUCCESS: Minimal Patient creation works!");
+    console.log("Issue was with additional fields, not security metadata");
+    
+  } else if (res.status === 500) {
+    console.log("❌ STILL GETTING 500 ERROR");
+    console.log("");
+    console.log("💡 The issue is likely one of these:");
+    console.log("");
+    console.log("1. 🔧 SECURITY TAG FORMAT:");
+    console.log("   Current format seems correct, but let's verify:");
+    console.log("   - access: https://www.icanbwell.com/access");
+    console.log("   - owner: https://www.icanbwell.com/owner");
+    console.log("   - sourceAssigningAuthority: https://www.icanbwell.com/sourceAssigningAuthority");
+    console.log("");
+    console.log("2. 🔧 SERVER CONFIGURATION:");
+    console.log("   - Check if preSaveHandlers are enabled");
+    console.log("   - Verify MongoDB connection");
+    console.log("   - Check if validation is too strict");
+    console.log("");
+    console.log("3. 🔧 MISSING REQUIRED FIELDS:");
+    console.log("   - Server might require additional mandatory fields");
+    console.log("   - Try adding: active: true, gender: 'unknown'");
+    console.log("");
+    console.log("4. 🔧 CODE VALUES:");
+    console.log("   - Try different code values");
+    console.log("   - Example: 'client' instead of 'bwell'");
+    console.log("");
+    console.log("🔍 IMMEDIATE DEBUGGING:");
+    console.log("1. Check server logs:");
+    console.log("   docker logs fhir-server-fhir-1 --tail 50");
+    console.log("");
+    console.log("2. Try curl command directly:");
+    console.log("   curl -X POST http://localhost:3000/4_0_0/Patient \\");
+    console.log("     -H 'Content-Type: application/fhir+json' \\");
+    console.log("     -H 'Authorization: Bearer {{authToken}}' \\");
+    console.log("     -d '{\"resourceType\":\"Patient\",\"meta\":{\"security\":[{\"system\":\"https://www.icanbwell.com/access\",\"code\":\"client\"},{\"system\":\"https://www.icanbwell.com/owner\",\"code\":\"client\"},{\"system\":\"https://www.icanbwell.com/sourceAssigningAuthority\",\"code\":\"client\"}]},\"name\":[{\"family\":\"Test\"}]}'");
+    
+  } else if (res.status === 400) {
+    console.log("❌ BAD REQUEST - Resource validation failed");
+    console.log("This is better than 500 - shows the request is reaching validation");
+    
+  } else if (res.status === 401) {
+    console.log("❌ AUTHENTICATION FAILED");
+    console.log("🔧 Get auth token first");
+    
+  } else {
+    console.log("❌ OTHER ERROR");
+    console.log("Status:", res.status);
+  }
+  
+  console.log("");
+  console.log("=========================================");
+}

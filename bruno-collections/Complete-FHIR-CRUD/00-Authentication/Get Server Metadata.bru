@@ -1,0 +1,43 @@
+meta {
+  name: Get Server Metadata
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ FHIR Server Metadata Retrieved");
+    console.log("FHIR Version:", res.body.fhirVersion);
+    console.log("Server Software:", res.body.software?.name, res.body.software?.version);
+    console.log("Publication Date:", res.body.date);
+    
+    if (res.body.rest && res.body.rest[0] && res.body.rest[0].resource) {
+      const resources = res.body.rest[0].resource.map(r => r.type).sort();
+      console.log("📋 Supported Resources (" + resources.length + "):");
+      console.log(resources.join(", "));
+      
+      // Store supported resources for reference
+      bru.setVar("supportedResources", resources.join(","));
+    }
+    
+    console.log("🔗 Base URL:", res.body.rest[0]?.resource?.[0]?.operation?.[0]?.definition || "Not specified");
+  } else {
+    console.log("❌ Failed to retrieve metadata:", res.status);
+    console.log("Error:", res.body);
+  }
+}

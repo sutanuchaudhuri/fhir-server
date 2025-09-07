@@ -1,0 +1,253 @@
+meta {
+  name: Create ServiceRequest
+  type: http
+  seq: 50
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/ServiceRequest
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "ServiceRequest",
+    "identifier": [
+      {
+        "system": "http://example.org/servicerequest-identifier",
+        "value": "SR-LAB-2024-001"
+      }
+    ],
+    "instantiatesCanonical": [
+      "http://example.org/ActivityDefinition/lipid-panel-routine"
+    ],
+    "instantiatesUri": [
+      "http://example.org/protocols/cardiovascular-screening"
+    ],
+    "basedOn": [
+      {
+        "reference": "CarePlan/{{lastCreatedCarePlanId}}",
+        "display": "Hypertension Management Care Plan"
+      }
+    ],
+    "replaces": [
+      {
+        "reference": "ServiceRequest/previous-lipid-request-456"
+      }
+    ],
+    "requisition": {
+      "system": "http://example.org/lab-requisition",
+      "value": "REQ-2024-001"
+    },
+    "status": "active",
+    "intent": "order",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "108252007",
+            "display": "Laboratory procedure"
+          }
+        ]
+      }
+    ],
+    "priority": "routine",
+    "doNotPerform": false,
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "57698-3",
+          "display": "Lipid panel with direct LDL - Serum or Plasma"
+        },
+        {
+          "system": "http://snomed.info/sct",
+          "code": "252275004",
+          "display": "Lipid profile"
+        }
+      ],
+      "text": "Comprehensive Lipid Panel"
+    },
+    "orderDetail": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "33747000",
+            "display": "Fasting specimen"
+          }
+        ],
+        "text": "Fasting 12 hours required"
+      }
+    ],
+    "quantityQuantity": {
+      "value": 1,
+      "unit": "test"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Routine Check-up"
+    },
+    "occurrenceDateTime": "2024-01-20T08:00:00Z",
+    "asNeededBoolean": false,
+    "authoredOn": "2024-01-15T10:30:00Z",
+    "requester": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "performerType": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "159652009",
+          "display": "Clinical laboratory scientist"
+        }
+      ]
+    },
+    "performer": [
+      {
+        "reference": "Organization/lab-services-123",
+        "display": "General Hospital Laboratory Services"
+      }
+    ],
+    "locationCode": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+            "code": "HOSP",
+            "display": "Hospital"
+          }
+        ]
+      }
+    ],
+    "locationReference": [
+      {
+        "reference": "Location/{{lastCreatedLocationId}}",
+        "display": "Laboratory - Main Hospital"
+      }
+    ],
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "38341003",
+            "display": "Hypertensive disorder"
+          }
+        ],
+        "text": "Cardiovascular risk assessment"
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Essential Hypertension"
+      }
+    ],
+    "insurance": [
+      {
+        "reference": "Coverage/primary-insurance-123"
+      }
+    ],
+    "supportingInfo": [
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}",
+        "display": "Recent Blood Pressure Readings"
+      }
+    ],
+    "specimen": [
+      {
+        "reference": "Specimen/serum-specimen-123",
+        "display": "Serum specimen"
+      }
+    ],
+    "bodySite": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "368209003",
+            "display": "Right arm"
+          }
+        ]
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient has family history of cardiovascular disease. Baseline lipid panel requested as part of comprehensive cardiovascular risk assessment. Patient counseled on fasting requirements."
+      }
+    ],
+    "patientInstruction": "Please fast for 12 hours before the blood draw (no food or drink except water). You may take your regular medications unless specifically instructed otherwise. Report to the laboratory between 7:00 AM - 9:00 AM for optimal fasting period.",
+    "relevantHistory": [
+      {
+        "reference": "Provenance/lab-order-history-123"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ ServiceRequest created successfully");
+    console.log("ServiceRequest ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Intent:", res.body.intent);
+    console.log("Priority:", res.body.priority);
+    console.log("Code:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Requester:", res.body.requester?.display);
+    console.log("Authored On:", res.body.authoredOn);
+    console.log("Occurrence:", res.body.occurrenceDateTime);
+    
+    if (res.body.category && res.body.category.length > 0) {
+      console.log("Categories:", res.body.category.map(c => c.coding?.[0]?.display).join(", "));
+    }
+    
+    if (res.body.performer && res.body.performer.length > 0) {
+      console.log("\n🏥 Performers:");
+      res.body.performer.forEach((performer, index) => {
+        console.log(`${index + 1}. ${performer.display || performer.reference}`);
+      });
+    }
+    
+    if (res.body.reasonCode && res.body.reasonCode.length > 0) {
+      console.log("\n🎯 Reason Codes:");
+      res.body.reasonCode.forEach((reason, index) => {
+        console.log(`${index + 1}. ${reason.text || reason.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.orderDetail && res.body.orderDetail.length > 0) {
+      console.log("\n📋 Order Details:");
+      res.body.orderDetail.forEach((detail, index) => {
+        console.log(`${index + 1}. ${detail.text || detail.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.patientInstruction) {
+      console.log("\n📝 Patient Instructions:");
+      console.log(res.body.patientInstruction);
+    }
+    
+    // Store the service request ID for other requests
+    bru.setEnvVar("lastCreatedServiceRequestId", res.body.id);
+  } else {
+    console.log("❌ Failed to create service request:", res.status, res.body);
+  }
+}

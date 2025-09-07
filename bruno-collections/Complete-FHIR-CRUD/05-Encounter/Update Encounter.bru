@@ -1,0 +1,340 @@
+meta {
+  name: Update Encounter
+  type: http
+  seq: 85
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Encounter/{{lastCreatedEncounterId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Encounter",
+    "id": "{{lastCreatedEncounterId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Encounter"]
+    },
+    "status": "finished",
+    "class": {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "AMB",
+      "display": "ambulatory"
+    },
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "162673000",
+            "display": "General examination of patient"
+          }
+        ]
+      }
+    ],
+    "priority": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActPriority",
+          "code": "R",
+          "display": "routine"
+        }
+      ]
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "episodeOfCare": [
+      {
+        "reference": "EpisodeOfCare/episode-001",
+        "display": "Headache Management Episode"
+      }
+    ],
+    "basedOn": [
+      {
+        "reference": "ServiceRequest/{{lastCreatedServiceRequestId}}",
+        "display": "Neurological Consultation Request"
+      }
+    ],
+    "participant": [
+      {
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "ATND",
+                "display": "attender"
+              }
+            ]
+          }
+        ],
+        "period": {
+          "start": "2024-01-15T14:00:00Z",
+          "end": "2024-01-15T15:00:00Z"
+        },
+        "individual": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        }
+      },
+      {
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "CON",
+                "display": "consultant"
+              }
+            ]
+          }
+        ],
+        "period": {
+          "start": "2024-01-15T14:30:00Z",
+          "end": "2024-01-15T14:45:00Z"
+        },
+        "individual": {
+          "reference": "Practitioner/neurologist-dr-johnson",
+          "display": "Dr. Johnson - Neurologist"
+        }
+      }
+    ],
+    "appointment": [
+      {
+        "reference": "Appointment/{{lastCreatedAppointmentId}}",
+        "display": "Follow-up Appointment"
+      }
+    ],
+    "period": {
+      "start": "2024-01-15T14:00:00Z",
+      "end": "2024-01-15T15:00:00Z"
+    },
+    "length": {
+      "value": 60,
+      "unit": "min",
+      "system": "http://unitsofmeasure.org",
+      "code": "min"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "25064002",
+            "display": "Headache"
+          }
+        ]
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Chronic Headache Condition"
+      }
+    ],
+    "diagnosis": [
+      {
+        "condition": {
+          "reference": "Condition/{{lastCreatedConditionId}}",
+          "display": "Primary Headache Disorder"
+        },
+        "use": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/diagnosis-role",
+              "code": "AD",
+              "display": "Admission diagnosis"
+            }
+          ]
+        },
+        "rank": 1
+      }
+    ],
+    "account": [
+      {
+        "reference": "Account/patient-account-001",
+        "display": "John Doe - Primary Account"
+      }
+    ],
+    "hospitalization": {
+      "preAdmissionIdentifier": {
+        "use": "usual",
+        "system": "http://hospital.example.org/pre-admission-ids",
+        "value": "PA-2024-001"
+      },
+      "origin": {
+        "reference": "Location/emergency-department",
+        "display": "Emergency Department"
+      },
+      "admitSource": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/admit-source",
+            "code": "emd",
+            "display": "From accident/emergency department"
+          }
+        ]
+      },
+      "dietPreference": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/diet",
+              "code": "vegetarian",
+              "display": "Vegetarian"
+            }
+          ]
+        }
+      ],
+      "specialCourtesy": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v3-EncounterSpecialCourtesy",
+              "code": "NRM",
+              "display": "normal courtesy"
+            }
+          ]
+        }
+      ],
+      "specialArrangement": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/encounter-special-arrangements",
+              "code": "wheel",
+              "display": "Wheelchair"
+            }
+          ]
+        }
+      ],
+      "destination": {
+        "reference": "Location/{{lastCreatedLocationId}}",
+        "display": "Radiology Department"
+      },
+      "dischargeDisposition": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/discharge-disposition",
+            "code": "home",
+            "display": "Home"
+          }
+        ]
+      }
+    },
+    "location": [
+      {
+        "location": {
+          "reference": "Location/{{lastCreatedLocationId}}",
+          "display": "Examination Room 201"
+        },
+        "status": "completed",
+        "physicalType": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+              "code": "ro",
+              "display": "Room"
+            }
+          ]
+        },
+        "period": {
+          "start": "2024-01-15T14:00:00Z",
+          "end": "2024-01-15T15:00:00Z"
+        }
+      }
+    ],
+    "serviceProvider": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "City General Hospital - Updated Service Provider"
+    },
+    "partOf": {
+      "reference": "Encounter/parent-encounter-001",
+      "display": "Main Hospital Stay"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const encounter = res.body;
+    console.log("✅ Encounter updated successfully");
+    console.log("Encounter ID:", encounter.id);
+    
+    console.log("\n📋 Updated Encounter Details:");
+    console.log("Status:", encounter.status);
+    console.log("Class:", encounter.class?.display);
+    console.log("Priority:", encounter.priority?.coding?.[0]?.display || "Not specified");
+    console.log("Subject:", encounter.subject?.display);
+    console.log("Service Provider:", encounter.serviceProvider?.display);
+    
+    if (encounter.period) {
+      console.log("\n⏰ Updated Period:");
+      console.log("Start:", encounter.period.start);
+      console.log("End:", encounter.period.end);
+      console.log("Duration:", encounter.length ? `${encounter.length.value} ${encounter.length.unit}` : "Not specified");
+    }
+    
+    if (encounter.participant && encounter.participant.length > 0) {
+      console.log("\n👥 Updated Participants:");
+      encounter.participant.forEach((participant, index) => {
+        console.log(`  ${index + 1}. ${participant.individual?.display}`);
+        console.log(`     Role: ${participant.type?.[0]?.coding?.[0]?.display}`);
+        if (participant.period) {
+          console.log(`     Period: ${participant.period.start} to ${participant.period.end}`);
+        }
+      });
+    }
+    
+    if (encounter.diagnosis && encounter.diagnosis.length > 0) {
+      console.log("\n🏥 Updated Diagnoses:");
+      encounter.diagnosis.forEach((diagnosis, index) => {
+        console.log(`  ${index + 1}. ${diagnosis.condition?.display}`);
+        console.log(`     Use: ${diagnosis.use?.coding?.[0]?.display}`);
+        console.log(`     Rank: ${diagnosis.rank}`);
+      });
+    }
+    
+    if (encounter.location && encounter.location.length > 0) {
+      console.log("\n📍 Updated Locations:");
+      encounter.location.forEach((location, index) => {
+        console.log(`  ${index + 1}. ${location.location?.display}`);
+        console.log(`     Status: ${location.status}`);
+        console.log(`     Type: ${location.physicalType?.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (encounter.hospitalization) {
+      console.log("\n🏥 Hospitalization Details:");
+      console.log("Admit Source:", encounter.hospitalization.admitSource?.coding?.[0]?.display);
+      console.log("Discharge Disposition:", encounter.hospitalization.dischargeDisposition?.coding?.[0]?.display);
+      if (encounter.hospitalization.dietPreference) {
+        console.log("Diet Preference:", encounter.hospitalization.dietPreference[0]?.coding?.[0]?.display);
+      }
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", encounter.meta?.versionId || "Unknown");
+    console.log("Last Updated:", encounter.meta?.lastUpdated || "Unknown");
+    console.log("Participants:", encounter.participant?.length || 0);
+    console.log("Diagnoses:", encounter.diagnosis?.length || 0);
+    console.log("Locations:", encounter.location?.length || 0);
+    console.log("Reason Codes:", encounter.reasonCode?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Encounter:", res.status, res.body);
+  }
+}

@@ -1,0 +1,213 @@
+meta {
+  name: Update Medication
+  type: http
+  seq: 74
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Medication/{{lastCreatedMedicationId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Medication",
+    "id": "{{lastCreatedMedicationId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Medication"]
+    },
+    "status": "active",
+    "manufacturer": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "Updated Pharmaceutical Company"
+    },
+    "code": {
+      "coding": [{
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "617993",
+        "display": "Lisinopril 10 MG Oral Tablet"
+      }, {
+        "system": "http://snomed.info/sct",
+        "code": "318851002",
+        "display": "Lisinopril"
+      }],
+      "text": "Lisinopril 10mg tablets - Updated formulation"
+    },
+    "form": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "385055001",
+        "display": "Tablet"
+      }],
+      "text": "Oral tablet - coated"
+    },
+    "ingredient": [{
+      "itemCodeableConcept": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "29046004",
+          "display": "Lisinopril"
+        }],
+        "text": "Lisinopril (active ingredient)"
+      },
+      "isActive": true,
+      "strength": {
+        "numerator": {
+          "value": 10,
+          "unit": "mg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg"
+        },
+        "denominator": {
+          "value": 1,
+          "unit": "tablet",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        }
+      }
+    }, {
+      "itemCodeableConcept": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "387567008",
+          "display": "Microcrystalline cellulose"
+        }],
+        "text": "Microcrystalline cellulose (excipient)"
+      },
+      "isActive": false,
+      "strength": {
+        "numerator": {
+          "value": 50,
+          "unit": "mg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg"
+        },
+        "denominator": {
+          "value": 1,
+          "unit": "tablet",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        }
+      }
+    }, {
+      "itemCodeableConcept": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "387341002",
+          "display": "Lactose monohydrate"
+        }],
+        "text": "Lactose monohydrate (excipient)"
+      },
+      "isActive": false,
+      "strength": {
+        "numerator": {
+          "value": 30,
+          "unit": "mg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg"
+        },
+        "denominator": {
+          "value": 1,
+          "unit": "tablet",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        }
+      }
+    }],
+    "batch": {
+      "lotNumber": "LOT789XYZ-UPDATED",
+      "expirationDate": "2025-12-31"
+    },
+    "amount": {
+      "numerator": {
+        "value": 100,
+        "unit": "tablet",
+        "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+        "code": "TAB"
+      },
+      "denominator": {
+        "value": 1,
+        "unit": "bottle",
+        "system": "http://unitsofmeasure.org",
+        "code": "1"
+      }
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const medication = res.body;
+    console.log("✅ Medication updated successfully");
+    console.log("Medication ID:", medication.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated Medication Details:");
+    console.log("Status:", medication.status);
+    console.log("Manufacturer:", medication.manufacturer?.display || medication.manufacturer?.reference);
+    
+    // Display medication code
+    if (medication.code) {
+      console.log("\n💊 Updated Medication Code:");
+      medication.code.coding?.forEach((coding, index) => {
+        console.log(`  ${index + 1}. ${coding.display} (${coding.code})`);
+        console.log(`     System: ${coding.system}`);
+      });
+      console.log(`  Text: ${medication.code.text}`);
+    }
+    
+    // Display form
+    console.log("\n📝 Updated Form:");
+    console.log("Form:", medication.form?.coding?.[0]?.display || medication.form?.text);
+    
+    // Display ingredients
+    if (medication.ingredient && medication.ingredient.length > 0) {
+      console.log("\n🧪 Updated Ingredients:");
+      medication.ingredient.forEach((ingredient, index) => {
+        console.log(`  Ingredient ${index + 1}:`);
+        console.log(`    Substance: ${ingredient.itemCodeableConcept?.coding?.[0]?.display || ingredient.itemCodeableConcept?.text}`);
+        console.log(`    Active: ${ingredient.isActive !== false ? "Yes" : "No"}`);
+        
+        if (ingredient.strength) {
+          const strength = ingredient.strength;
+          console.log(`    Strength: ${strength.numerator?.value} ${strength.numerator?.unit} per ${strength.denominator?.value} ${strength.denominator?.unit}`);
+        }
+      });
+    }
+    
+    // Display batch information
+    if (medication.batch) {
+      console.log("\n📦 Updated Batch Information:");
+      console.log("Lot Number:", medication.batch.lotNumber);
+      console.log("Expiration Date:", medication.batch.expirationDate);
+    }
+    
+    // Display amount
+    if (medication.amount) {
+      console.log("\n📏 Updated Amount:");
+      console.log(`Amount: ${medication.amount.numerator?.value} ${medication.amount.numerator?.unit} per ${medication.amount.denominator?.value} ${medication.amount.denominator?.unit}`);
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", medication.meta?.versionId || "Unknown");
+    console.log("Last Updated:", medication.meta?.lastUpdated || "Unknown");
+    console.log("Total Ingredients:", medication.ingredient?.length || 0);
+    console.log("Active Ingredients:", medication.ingredient?.filter(i => i.isActive !== false).length || 0);
+    console.log("Inactive Ingredients:", medication.ingredient?.filter(i => i.isActive === false).length || 0);
+    console.log("Has Batch Info:", medication.batch ? "Yes" : "No");
+    console.log("Has Amount Info:", medication.amount ? "Yes" : "No");
+    
+  } else {
+    console.log("❌ Failed to update Medication:", res.status, res.body);
+  }
+}

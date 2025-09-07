@@ -1,0 +1,34 @@
+meta {
+  name: Read MedicationStatement
+  type: http
+  seq: 111
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationStatement/{{lastCreatedMedicationStatementId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ MedicationStatement retrieved successfully");
+    console.log("MedicationStatement ID:", res.body.id);
+    console.log("Medication:", res.body.medicationCodeableConcept?.coding?.[0]?.display);
+    console.log("Status:", res.body.status);
+    console.log("Effective Date:", res.body.effectiveDateTime);
+    console.log("Information Source:", res.body.informationSource?.display);
+  } else if (res.status === 404) {
+    console.log("❌ MedicationStatement not found - please create a medication statement first");
+  } else {
+    console.log("❌ Failed to retrieve medication statement:", res.status, res.body);
+  }
+}

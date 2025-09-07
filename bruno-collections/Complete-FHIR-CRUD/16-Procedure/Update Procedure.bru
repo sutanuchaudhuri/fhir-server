@@ -1,0 +1,223 @@
+meta {
+  name: Update Procedure
+  type: http
+  seq: 68
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Procedure/{{lastCreatedProcedureId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Procedure",
+    "id": "{{lastCreatedProcedureId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Procedure"]
+    },
+    "status": "completed",
+    "category": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "103693007",
+        "display": "Diagnostic procedure"
+      }],
+      "text": "Diagnostic procedure"
+    },
+    "code": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "241615005",
+        "display": "Magnetic resonance imaging of brain"
+      }],
+      "text": "Brain MRI with contrast"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Test Patient"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Office Visit"
+    },
+    "performedDateTime": "{{$isoTimestamp}}",
+    "performer": [{
+      "function": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "17561000",
+          "display": "Cardiologist"
+        }]
+      },
+      "actor": {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Smith"
+      }
+    }],
+    "location": {
+      "reference": "Location/{{lastCreatedLocationId}}",
+      "display": "Radiology Department"
+    },
+    "reasonCode": [{
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "25064002",
+        "display": "Headache"
+      }],
+      "text": "Persistent headaches requiring investigation"
+    }],
+    "bodySite": [{
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "12738006",
+        "display": "Brain structure"
+      }],
+      "text": "Brain"
+    }],
+    "outcome": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "385669000",
+        "display": "Successful"
+      }],
+      "text": "Procedure completed successfully with contrast enhancement"
+    },
+    "note": [{
+      "text": "Patient tolerated the procedure well. Contrast enhancement provided excellent visualization. No immediate complications observed. Updated with complete imaging results and radiologist interpretation.",
+      "time": "{{$isoTimestamp}}"
+    }],
+    "focalDevice": [{
+      "action": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "129264002",
+          "display": "Action"
+        }]
+      },
+      "manipulated": {
+        "reference": "Device/mri-scanner-siemens-001",
+        "display": "Siemens MRI Scanner"
+      }
+    }],
+    "usedCode": [{
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "387467008",
+        "display": "Gadolinium contrast agent"
+      }],
+      "text": "Gadolinium-based contrast medium"
+    }],
+    "complication": [],
+    "followUp": [{
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "390906007",
+        "display": "Follow-up encounter"
+      }],
+      "text": "Follow-up appointment in 2 weeks to discuss results"
+    }]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const procedure = res.body;
+    console.log("✅ Procedure updated successfully");
+    console.log("Procedure ID:", procedure.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated Procedure Details:");
+    console.log("Status:", procedure.status);
+    console.log("Category:", procedure.category?.coding?.[0]?.display || procedure.category?.text);
+    console.log("Code:", procedure.code?.coding?.[0]?.display || procedure.code?.text);
+    console.log("Subject:", procedure.subject?.reference);
+    console.log("Encounter:", procedure.encounter?.reference || "Not specified");
+    console.log("Performed:", procedure.performedDateTime || "Not specified");
+    
+    // Display performers
+    if (procedure.performer && procedure.performer.length > 0) {
+      console.log("\n👨‍⚕️ Updated Performers:");
+      procedure.performer.forEach((performer, index) => {
+        console.log(`  ${index + 1}. ${performer.actor?.display || performer.actor?.reference}`);
+        console.log(`     Function: ${performer.function?.coding?.[0]?.display || "Not specified"}`);
+      });
+    }
+    
+    // Display location
+    console.log("\n📍 Location:", procedure.location?.display || procedure.location?.reference || "Not specified");
+    
+    // Display reason
+    if (procedure.reasonCode && procedure.reasonCode.length > 0) {
+      console.log("\n💡 Updated Reason:");
+      procedure.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text}`);
+      });
+    }
+    
+    // Display body site
+    if (procedure.bodySite && procedure.bodySite.length > 0) {
+      console.log("\n🎯 Body Site:");
+      procedure.bodySite.forEach((site, index) => {
+        console.log(`  ${index + 1}. ${site.coding?.[0]?.display || site.text}`);
+      });
+    }
+    
+    // Display outcome
+    console.log("\n📊 Outcome:", procedure.outcome?.coding?.[0]?.display || procedure.outcome?.text || "Not specified");
+    
+    // Display focal devices
+    if (procedure.focalDevice && procedure.focalDevice.length > 0) {
+      console.log("\n🔧 Focal Devices:");
+      procedure.focalDevice.forEach((device, index) => {
+        console.log(`  ${index + 1}. ${device.manipulated?.display || device.manipulated?.reference}`);
+      });
+    }
+    
+    // Display used codes
+    if (procedure.usedCode && procedure.usedCode.length > 0) {
+      console.log("\n💊 Used Materials:");
+      procedure.usedCode.forEach((code, index) => {
+        console.log(`  ${index + 1}. ${code.coding?.[0]?.display || code.text}`);
+      });
+    }
+    
+    // Display follow-up
+    if (procedure.followUp && procedure.followUp.length > 0) {
+      console.log("\n📅 Follow-up:");
+      procedure.followUp.forEach((followUp, index) => {
+        console.log(`  ${index + 1}. ${followUp.coding?.[0]?.display || followUp.text}`);
+      });
+    }
+    
+    // Display notes
+    if (procedure.note && procedure.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      procedure.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", procedure.meta?.versionId || "Unknown");
+    console.log("Last Updated:", procedure.meta?.lastUpdated || "Unknown");
+    console.log("Performers:", procedure.performer?.length || 0);
+    console.log("Body Sites:", procedure.bodySite?.length || 0);
+    console.log("Focal Devices:", procedure.focalDevice?.length || 0);
+    console.log("Used Materials:", procedure.usedCode?.length || 0);
+    console.log("Follow-ups:", procedure.followUp?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Procedure:", res.status, res.body);
+  }
+}

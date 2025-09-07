@@ -1,0 +1,99 @@
+meta {
+  name: Debug - FHIR Metadata Check
+  type: http
+  seq: 98
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  auth: none
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== DEBUG - FHIR METADATA CHECK ===");
+  console.log("");
+  console.log("🔗 Metadata URL:", "{{baseUrl}}/{{fhirVersion}}/metadata");
+  console.log("⏰ Check Time:", new Date().toISOString());
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ FHIR SERVER IS OPERATIONAL");
+    console.log("");
+    console.log("📊 Server Information:");
+    console.log("  Implementation:", res.body.software?.name || "Unknown");
+    console.log("  Version:", res.body.software?.version || "Unknown");
+    console.log("  FHIR Version:", res.body.fhirVersion || "Unknown");
+    console.log("  Status:", res.body.status || "Unknown");
+    console.log("");
+    
+    // Check if Patient resource is supported
+    const restSection = res.body.rest?.[0];
+    const patientResource = restSection?.resource?.find(r => r.type === "Patient");
+    
+    if (patientResource) {
+      console.log("👤 Patient Resource Support:");
+      console.log("  Supported:", "✅ Yes");
+      const interactions = patientResource.interaction?.map(i => i.code) || [];
+      console.log("  Interactions:", interactions.join(", ") || "None specified");
+      
+      if (interactions.includes("create")) {
+        console.log("  CREATE operation:", "✅ Supported");
+      } else {
+        console.log("  CREATE operation:", "❌ Not supported");
+      }
+    } else {
+      console.log("👤 Patient Resource Support:", "❌ Not found");
+    }
+    
+    console.log("");
+    console.log("🔒 Security Information:");
+    const security = restSection?.security;
+    if (security) {
+      console.log("  Security configured:", "✅ Yes");
+      if (security.service) {
+        security.service.forEach(service => {
+          console.log(`  - ${service.coding?.[0]?.display || service.coding?.[0]?.code || "Unknown"}`);
+        });
+      }
+    } else {
+      console.log("  Security configured:", "⚠️  No security info");
+    }
+    
+    console.log("");
+    console.log("🎯 READY FOR AUTHENTICATION AND TESTING");
+    console.log("Next: Run 'Dev Environment - Get Auth Token'");
+    
+  } else if (res.status === 401) {
+    console.log("🔒 AUTHENTICATION REQUIRED");
+    console.log("FHIR server requires authentication for metadata endpoint");
+    console.log("This is unusual but possible");
+    console.log("");
+    console.log("🔄 Try:");
+    console.log("1. Get auth token first");
+    console.log("2. Re-run this test with authentication");
+    
+  } else {
+    console.log("❌ FHIR SERVER NOT RESPONDING");
+    console.log("Status:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 TROUBLESHOOTING:");
+    console.log("");
+    console.log("1. Verify server is running:");
+    console.log("   Run 'Debug - Server Status Check'");
+    console.log("");
+    console.log("2. Check FHIR version in URL:");
+    console.log("   Current: {{fhirVersion}}");
+    console.log("   Try: 4_0_0, R4, or fhir");
+    console.log("");
+    console.log("3. Check if server requires authentication:");
+    console.log("   Some servers require auth for all endpoints");
+  }
+  
+  console.log("");
+  console.log("=====================================");
+}

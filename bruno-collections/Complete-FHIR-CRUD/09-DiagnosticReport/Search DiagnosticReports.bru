@@ -1,0 +1,86 @@
+meta {
+  name: Search DiagnosticReports
+  type: http
+  seq: 43
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/DiagnosticReport?patient={{lastCreatedPatientId}}&status=final&_count=20&_sort=-issued
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ DiagnosticReport search successful");
+    console.log("Bundle type:", res.body.type);
+    console.log("Total reports found:", res.body.total);
+    console.log("Reports returned:", res.body.entry?.length || 0);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("\n📋 Patient Diagnostic Reports:");
+      res.body.entry.forEach((entry, index) => {
+        const report = entry.resource;
+        console.log(`${index + 1}. ${report.code?.text || report.code?.coding?.[0]?.display} (ID: ${report.id})`);
+        console.log(`   Status: ${report.status}`);
+        console.log(`   Category: ${report.category?.[0]?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Effective: ${report.effectiveDateTime || 'Not specified'}`);
+        console.log(`   Issued: ${report.issued}`);
+        console.log(`   Subject: ${report.subject?.display}`);
+        
+        if (report.performer && report.performer.length > 0) {
+          console.log(`   Performers: ${report.performer.map(p => p.display || p.reference).join(', ')}`);
+        }
+        
+        if (report.result && report.result.length > 0) {
+          console.log(`   Results: ${report.result.length} observation(s)`);
+        }
+        
+        if (report.conclusion) {
+          console.log(`   Conclusion: ${report.conclusion.substring(0, 100)}${report.conclusion.length > 100 ? '...' : ''}`);
+        }
+        
+        console.log("");
+      });
+      
+      // Count by status
+      const statusCounts = res.body.entry.reduce((acc, entry) => {
+        const status = entry.resource.status;
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("📊 Report Status Summary:");
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        console.log(`   ${status}: ${count}`);
+      });
+      
+      // Count by category
+      const categoryCounts = res.body.entry.reduce((acc, entry) => {
+        const category = entry.resource.category?.[0]?.coding?.[0]?.display || 'Unspecified';
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("\n📂 Report Category Summary:");
+      Object.entries(categoryCounts).forEach(([category, count]) => {
+        console.log(`   ${category}: ${count}`);
+      });
+    }
+    
+    // Store first report ID for other tests
+    if (res.body.entry && res.body.entry.length > 0) {
+      bru.setEnvVar("searchedDiagnosticReportId", res.body.entry[0].resource.id);
+    }
+  } else {
+    console.log("❌ Failed to search diagnostic reports:", res.status, res.body);
+  }
+}

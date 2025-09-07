@@ -1,0 +1,38 @@
+meta {
+  name: Search MedicationRequests
+  type: http
+  seq: 72
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationRequest?patient={{lastCreatedPatientId}}&status=active&_count=10&_sort=-authored
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ MedicationRequest search completed successfully");
+    console.log("Total medication requests found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("Medication requests found:");
+      res.body.entry.forEach((entry, index) => {
+        const medReq = entry.resource;
+        console.log(`${index + 1}. ${medReq.medicationCodeableConcept?.coding?.[0]?.display} - ${medReq.status} (${medReq.authoredOn}) (ID: ${medReq.id})`);
+      });
+    } else {
+      console.log("No medication requests found for this patient");
+    }
+  } else {
+    console.log("❌ Failed to search medication requests:", res.status, res.body);
+  }
+}

@@ -1,0 +1,258 @@
+meta {
+  name: Update DiagnosticReport
+  type: http
+  seq: 91
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/DiagnosticReport/{{lastCreatedDiagnosticReportId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "DiagnosticReport",
+    "id": "{{lastCreatedDiagnosticReportId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/DiagnosticReport"]
+    },
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+            "code": "LAB",
+            "display": "Laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "24323-8",
+          "display": "Comprehensive metabolic panel - Serum or Plasma"
+        },
+        {
+          "system": "http://snomed.info/sct",
+          "code": "252275004",
+          "display": "Comprehensive metabolic panel"
+        }
+      ],
+      "text": "Comprehensive Metabolic Panel - Updated Report"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "effectiveDateTime": "{{$isoTimestamp}}",
+    "issued": "{{$isoTimestamp}}",
+    "performer": [
+      {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Emily Smith"
+      },
+      {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "City General Hospital Laboratory"
+      }
+    ],
+    "resultsInterpreter": [
+      {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Emily Smith"
+      }
+    ],
+    "specimen": [
+      {
+        "reference": "Specimen/serum-specimen-001",
+        "display": "Serum specimen"
+      }
+    ],
+    "result": [
+      {
+        "reference": "Observation/glucose-level-001",
+        "display": "Glucose Level"
+      },
+      {
+        "reference": "Observation/sodium-level-001",
+        "display": "Sodium Level"
+      },
+      {
+        "reference": "Observation/potassium-level-001",
+        "display": "Potassium Level"
+      },
+      {
+        "reference": "Observation/chloride-level-001",
+        "display": "Chloride Level"
+      },
+      {
+        "reference": "Observation/bun-level-001",
+        "display": "Blood Urea Nitrogen"
+      },
+      {
+        "reference": "Observation/creatinine-level-001",
+        "display": "Creatinine Level"
+      }
+    ],
+    "imagingStudy": [
+      {
+        "reference": "ImagingStudy/chest-xray-001",
+        "display": "Chest X-Ray Study"
+      }
+    ],
+    "media": [
+      {
+        "comment": "Updated laboratory report with trending data",
+        "link": {
+          "reference": "Media/lab-report-chart-001",
+          "display": "Laboratory Trend Chart"
+        }
+      }
+    ],
+    "conclusion": "Updated Comprehensive Metabolic Panel Results:\n\n1. GLUCOSE: 95 mg/dL (Normal) - Improved from previous 110 mg/dL\n2. SODIUM: 142 mEq/L (Normal)\n3. POTASSIUM: 4.1 mEq/L (Normal)\n4. CHLORIDE: 101 mEq/L (Normal)\n5. BUN: 18 mg/dL (Normal)\n6. CREATININE: 1.0 mg/dL (Normal)\n7. BUN/CREATININE RATIO: 18:1 (Normal)\n\nOVERALL ASSESSMENT: All metabolic parameters are within normal limits. Glucose levels have improved since last testing, indicating good glycemic control. Kidney function markers (BUN, creatinine) are stable and normal. Electrolyte balance is maintained.\n\nRECOMMENDATIONS:\n- Continue current medication regimen\n- Maintain dietary modifications\n- Repeat metabolic panel in 3 months\n- Monitor blood pressure regularly\n- Follow-up with endocrinology as scheduled",
+    "conclusionCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "17621005",
+            "display": "Normal finding"
+          }
+        ],
+        "text": "Normal metabolic panel results"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "182840001",
+            "display": "Diabetes mellitus well controlled"
+          }
+        ],
+        "text": "Improved glucose control"
+      }
+    ],
+    "presentedForm": [
+      {
+        "contentType": "application/pdf",
+        "language": "en-US",
+        "data": "JVBERi0xLjQKJcOkw7zDtsOgCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+",
+        "url": "https://example.com/reports/cmp-report-updated.pdf",
+        "size": 245760,
+        "hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+        "title": "Comprehensive Metabolic Panel - Updated Report",
+        "creation": "{{$isoTimestamp}}"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const report = res.body;
+    console.log("✅ DiagnosticReport updated successfully");
+    console.log("Report ID:", report.id);
+    
+    console.log("\n📋 Updated Report Details:");
+    console.log("Status:", report.status);
+    console.log("Category:", report.category?.[0]?.coding?.[0]?.display);
+    console.log("Code:", report.code?.coding?.[0]?.display);
+    console.log("Subject:", report.subject?.display);
+    console.log("Effective Date:", report.effectiveDateTime);
+    console.log("Issued:", report.issued);
+    
+    if (report.performer && report.performer.length > 0) {
+      console.log("\n👥 Performers:");
+      report.performer.forEach((performer, index) => {
+        console.log(`  ${index + 1}. ${performer.display}`);
+      });
+    }
+    
+    if (report.resultsInterpreter && report.resultsInterpreter.length > 0) {
+      console.log("\n🔬 Results Interpreters:");
+      report.resultsInterpreter.forEach((interpreter, index) => {
+        console.log(`  ${index + 1}. ${interpreter.display}`);
+      });
+    }
+    
+    if (report.specimen && report.specimen.length > 0) {
+      console.log("\n🧪 Specimens:");
+      report.specimen.forEach((specimen, index) => {
+        console.log(`  ${index + 1}. ${specimen.display}`);
+      });
+    }
+    
+    if (report.result && report.result.length > 0) {
+      console.log("\n📊 Updated Results:");
+      report.result.forEach((result, index) => {
+        console.log(`  ${index + 1}. ${result.display}`);
+      });
+    }
+    
+    if (report.imagingStudy && report.imagingStudy.length > 0) {
+      console.log("\n🖼️ Imaging Studies:");
+      report.imagingStudy.forEach((study, index) => {
+        console.log(`  ${index + 1}. ${study.display}`);
+      });
+    }
+    
+    if (report.media && report.media.length > 0) {
+      console.log("\n📎 Media Attachments:");
+      report.media.forEach((media, index) => {
+        console.log(`  ${index + 1}. ${media.link?.display} - ${media.comment}`);
+      });
+    }
+    
+    if (report.conclusion) {
+      console.log("\n📝 Updated Conclusion:");
+      console.log(report.conclusion.substring(0, 200) + (report.conclusion.length > 200 ? "..." : ""));
+    }
+    
+    if (report.conclusionCode && report.conclusionCode.length > 0) {
+      console.log("\n🏷️ Conclusion Codes:");
+      report.conclusionCode.forEach((code, index) => {
+        console.log(`  ${index + 1}. ${code.coding?.[0]?.display} - ${code.text}`);
+      });
+    }
+    
+    if (report.presentedForm && report.presentedForm.length > 0) {
+      console.log("\n📄 Presented Forms:");
+      report.presentedForm.forEach((form, index) => {
+        console.log(`  ${index + 1}. ${form.title}`);
+        console.log(`     Type: ${form.contentType}`);
+        console.log(`     Size: ${form.size} bytes`);
+        console.log(`     Language: ${form.language}`);
+        console.log(`     Created: ${form.creation}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("Version:", report.meta?.versionId || "Unknown");
+    console.log("Last Updated:", report.meta?.lastUpdated || "Unknown");
+    console.log("Results Count:", report.result?.length || 0);
+    console.log("Specimens:", report.specimen?.length || 0);
+    console.log("Imaging Studies:", report.imagingStudy?.length || 0);
+    console.log("Media Attachments:", report.media?.length || 0);
+    console.log("Presented Forms:", report.presentedForm?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update DiagnosticReport:", res.status, res.body);
+  }
+}

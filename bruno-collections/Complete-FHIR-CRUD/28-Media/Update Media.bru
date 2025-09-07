@@ -1,0 +1,273 @@
+meta {
+  name: Update Media
+  type: http
+  seq: 103
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Media/{{lastCreatedMediaId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Media",
+    "id": "{{lastCreatedMediaId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Media"]
+    },
+    "identifier": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code": "ACSN",
+              "display": "Accession ID"
+            }
+          ]
+        },
+        "system": "http://hospital.example.org/media-identifiers",
+        "value": "MEDIA-ACC-12345-UPDATED"
+      }
+    ],
+    "basedOn": [
+      {
+        "reference": "ServiceRequest/imaging-request-001",
+        "display": "Updated Imaging Service Request"
+      }
+    ],
+    "partOf": [
+      {
+        "reference": "ImagingStudy/chest-xray-study-001",
+        "display": "Chest X-Ray Study"
+      }
+    ],
+    "status": "completed",
+    "type": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/media-type",
+          "code": "image",
+          "display": "Image"
+        }
+      ],
+      "text": "Medical Image - Updated"
+    },
+    "modality": {
+      "coding": [
+        {
+          "system": "http://dicom.nema.org/resources/ontology/DCM",
+          "code": "DX",
+          "display": "Digital Radiography"
+        }
+      ],
+      "text": "Digital Chest X-Ray - Updated"
+    },
+    "view": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "399067008",
+          "display": "Lateral view"
+        }
+      ],
+      "text": "Lateral chest view - Updated angle"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "createdDateTime": "{{$isoTimestamp}}",
+    "issued": "{{$isoTimestamp}}",
+    "operator": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith - Radiologist"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "29857009",
+            "display": "Chest pain"
+          }
+        ],
+        "text": "Chest pain investigation - Updated indication"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "267036007",
+            "display": "Dyspnea"
+          }
+        ],
+        "text": "Shortness of breath assessment"
+      }
+    ],
+    "bodySite": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "51185008",
+          "display": "Thoracic structure"
+        }
+      ],
+      "text": "Chest and thoracic region"
+    },
+    "deviceName": "GE Digital Radiography System - Model DX-3000 (Updated)",
+    "device": {
+      "reference": "Device/radiology-equipment-001",
+      "display": "Digital X-Ray Machine"
+    },
+    "height": 2048,
+    "width": 2048,
+    "frames": 1,
+    "duration": null,
+    "content": {
+      "contentType": "image/jpeg",
+      "language": "en-US",
+      "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+      "url": "https://example.com/media/chest-xray-lateral-updated.jpg",
+      "size": 245760,
+      "hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+      "title": "Chest X-Ray Lateral View - Updated Image",
+      "creation": "{{$isoTimestamp}}"
+    },
+    "note": [
+      {
+        "authorReference": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "time": "{{$isoTimestamp}}",
+        "text": "Updated chest X-ray image with improved positioning and enhanced contrast. Clear visualization of cardiac silhouette and lung fields. No acute findings identified. Image quality significantly improved compared to previous study. Updated technical parameters resulted in better diagnostic quality."
+      },
+      {
+        "authorReference": {
+          "reference": "Practitioner/technologist-001",
+          "display": "Radiology Technologist"
+        },
+        "time": "{{$isoTimestamp}}",
+        "text": "Updated image acquisition: Patient positioning improved for lateral view. Exposure parameters adjusted for optimal image quality. Updated DICOM metadata includes enhanced processing algorithms. Image archived in PACS system with updated annotations."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const media = res.body;
+    console.log("✅ Media updated successfully");
+    console.log("Media ID:", media.id);
+    
+    console.log("\n📋 Updated Media Details:");
+    console.log("Status:", media.status);
+    console.log("Type:", media.type?.coding?.[0]?.display);
+    console.log("Modality:", media.modality?.coding?.[0]?.display);
+    console.log("View:", media.view?.coding?.[0]?.display);
+    console.log("Subject:", media.subject?.display);
+    console.log("Encounter:", media.encounter?.display);
+    console.log("Created:", media.createdDateTime);
+    console.log("Issued:", media.issued);
+    console.log("Operator:", media.operator?.display);
+    console.log("Device Name:", media.deviceName);
+    console.log("Height:", media.height);
+    console.log("Width:", media.width);
+    console.log("Frames:", media.frames);
+    
+    if (media.identifier && media.identifier.length > 0) {
+      console.log("\n🏷️ Updated Identifiers:");
+      media.identifier.forEach((id, index) => {
+        console.log(`  ${index + 1}. ${id.type?.coding?.[0]?.display}: ${id.value}`);
+        console.log(`     System: ${id.system}`);
+      });
+    }
+    
+    if (media.basedOn && media.basedOn.length > 0) {
+      console.log("\n📋 Updated Based On:");
+      media.basedOn.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (media.partOf && media.partOf.length > 0) {
+      console.log("\n🔗 Updated Part Of:");
+      media.partOf.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (media.reasonCode && media.reasonCode.length > 0) {
+      console.log("\n🎯 Updated Reason Codes:");
+      media.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display} - ${reason.text}`);
+      });
+    }
+    
+    if (media.bodySite) {
+      console.log("\n🫀 Updated Body Site:");
+      console.log("Code:", media.bodySite.coding?.[0]?.display);
+      console.log("Text:", media.bodySite.text);
+    }
+    
+    if (media.device) {
+      console.log("\n🔧 Updated Device:");
+      console.log("Reference:", media.device.display);
+    }
+    
+    if (media.content) {
+      console.log("\n💾 Updated Content Information:");
+      console.log("Content Type:", media.content.contentType);
+      console.log("Language:", media.content.language);
+      console.log("Size:", media.content.size ? `${media.content.size} bytes` : 'Not specified');
+      console.log("Title:", media.content.title);
+      console.log("Creation Date:", media.content.creation);
+      console.log("Hash:", media.content.hash);
+      
+      if (media.content.url) {
+        console.log("URL:", media.content.url);
+      }
+      
+      if (media.content.data) {
+        console.log("Data:", `Base64 encoded (${media.content.data.length} characters)`);
+      }
+    }
+    
+    if (media.note && media.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      media.note.forEach((note, index) => {
+        console.log(`  Note ${index + 1} (${note.time}):`);
+        console.log(`    Author: ${note.authorReference?.display || note.authorString}`);
+        console.log(`    Text: ${note.text.substring(0, 100)}${note.text.length > 100 ? '...' : ''}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("Version:", media.meta?.versionId || "Unknown");
+    console.log("Last Updated:", media.meta?.lastUpdated || "Unknown");
+    console.log("Identifiers:", media.identifier?.length || 0);
+    console.log("Reason Codes:", media.reasonCode?.length || 0);
+    console.log("Clinical Notes:", media.note?.length || 0);
+    console.log("Image Dimensions:", `${media.width || 'Unknown'}x${media.height || 'Unknown'}`);
+    console.log("Content Size:", media.content?.size ? `${media.content.size} bytes` : 'Not specified');
+    
+  } else {
+    console.log("❌ Failed to update Media:", res.status, res.body);
+  }
+}

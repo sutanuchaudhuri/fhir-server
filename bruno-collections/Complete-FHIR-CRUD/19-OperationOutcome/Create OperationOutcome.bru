@@ -1,0 +1,133 @@
+meta {
+  name: Create OperationOutcome
+  type: http
+  seq: 39
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/OperationOutcome
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "OperationOutcome",
+    "issue": [
+      {
+        "severity": "warning",
+        "code": "business-rule",
+        "details": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/operation-outcome",
+              "code": "MSG_PARAM_INVALID",
+              "display": "Parameter invalid"
+            }
+          ],
+          "text": "Patient age verification required for medication dosage calculation"
+        },
+        "diagnostics": "Patient birthDate is required to calculate appropriate medication dosage for patients under 18 years of age",
+        "location": [
+          "Patient.birthDate"
+        ],
+        "expression": [
+          "Patient.birthDate"
+        ]
+      },
+      {
+        "severity": "information",
+        "code": "informational",
+        "details": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/operation-outcome",
+              "code": "MSG_CREATED",
+              "display": "New resource created"
+            }
+          ],
+          "text": "Patient record created successfully with validation warnings"
+        },
+        "diagnostics": "Patient resource has been created but contains data quality issues that should be addressed",
+        "location": [
+          "Patient"
+        ],
+        "expression": [
+          "Patient"
+        ]
+      },
+      {
+        "severity": "error",
+        "code": "required",
+        "details": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/operation-outcome",
+              "code": "MSG_PARAM_MISSING",
+              "display": "Required parameter missing"
+            }
+          ],
+          "text": "Required field missing: Patient identifier"
+        },
+        "diagnostics": "Patient.identifier is required for patient registration in this system",
+        "location": [
+          "Patient.identifier"
+        ],
+        "expression": [
+          "Patient.identifier"
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ OperationOutcome created successfully");
+    console.log("OperationOutcome ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Total Issues:", res.body.issue?.length || 0);
+    
+    if (res.body.issue && res.body.issue.length > 0) {
+      console.log("\n🚨 Issues:");
+      res.body.issue.forEach((issue, index) => {
+        console.log(`${index + 1}. Severity: ${issue.severity}`);
+        console.log(`   Code: ${issue.code}`);
+        console.log(`   Details: ${issue.details?.text || issue.details?.coding?.[0]?.display}`);
+        console.log(`   Diagnostics: ${issue.diagnostics}`);
+        if (issue.location && issue.location.length > 0) {
+          console.log(`   Location: ${issue.location.join(", ")}`);
+        }
+        if (issue.expression && issue.expression.length > 0) {
+          console.log(`   Expression: ${issue.expression.join(", ")}`);
+        }
+        console.log("");
+      });
+      
+      // Count by severity
+      const severityCounts = res.body.issue.reduce((acc, issue) => {
+        acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("📊 Issue Summary:");
+      Object.entries(severityCounts).forEach(([severity, count]) => {
+        console.log(`   ${severity}: ${count}`);
+      });
+    }
+    
+    // Store the operation outcome ID for other requests
+    bru.setEnvVar("lastCreatedOperationOutcomeId", res.body.id);
+  } else {
+    console.log("❌ Failed to create operation outcome:", res.status, res.body);
+  }
+}

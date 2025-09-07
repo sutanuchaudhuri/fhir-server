@@ -1,0 +1,60 @@
+meta {
+  name: Test CRUD - Read
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{testPatientId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== CRUD TEST - READ ===");
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ STEP 2: READ - Patient retrieved successfully");
+    console.log("Patient ID:", res.body.id);
+    console.log("Name:", res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("Active:", res.body.active);
+    console.log("Security Tags:", res.body.meta?.security?.length || 0, "tags present");
+    
+    // Verify security tags are preserved
+    const securityTags = res.body.meta?.security || [];
+    const hasAccess = securityTags.some(tag => tag.system?.includes('access'));
+    const hasOwner = securityTags.some(tag => tag.system?.includes('owner'));
+    const hasSourceAuth = securityTags.some(tag => tag.system?.includes('sourceAssigningAuthority'));
+    
+    console.log("Security Validation:");
+    console.log("  - Access tag:", hasAccess ? "✅" : "❌");
+    console.log("  - Owner tag:", hasOwner ? "✅" : "❌");
+    console.log("  - SourceAssigningAuthority tag:", hasSourceAuth ? "✅" : "❌");
+    
+    console.log("");
+    console.log("🔄 Ready for STEP 3: UPDATE");
+    
+  } else if (res.status === 404) {
+    console.log("❌ STEP 2: READ - Patient not found");
+    console.log("Make sure you ran the CREATE test first");
+    
+  } else if (res.status === 401) {
+    console.log("❌ STEP 2: READ - Authentication failed");
+    console.log("Run 'Get Auth Token' to refresh your token");
+    
+  } else {
+    console.log("❌ STEP 2: READ - Failed:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("=====================");
+}

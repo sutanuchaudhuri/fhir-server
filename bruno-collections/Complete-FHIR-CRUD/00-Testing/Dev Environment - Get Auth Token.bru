@@ -1,0 +1,102 @@
+meta {
+  name: Dev Environment - Get Auth Token
+  type: http
+  seq: 0
+}
+
+post {
+  url: {{authUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}",
+    "audience": "{{audience}}",
+    "grant_type": "client_credentials"
+  }
+}
+
+script:post-response {
+  console.log("=== DEV ENVIRONMENT - AUTHENTICATION TEST ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🔗 Auth URL:", "{{authUrl}}");
+  console.log("🎯 Audience:", "{{audience}}");
+  console.log("🆔 Client ID:", "{{clientId}}");
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ AUTHENTICATION SUCCESSFUL!");
+    console.log("");
+    console.log("📊 Token Details:");
+    console.log("  Token Type:", res.body.token_type);
+    console.log("  Expires In:", res.body.expires_in, "seconds");
+    console.log("  Scopes:", res.body.scope || "Not specified");
+    console.log("");
+    
+    // Store the access token
+    bru.setVar("authToken", res.body.access_token);
+    
+    console.log("🔑 Auth token stored in dev environment");
+    console.log("");
+    console.log("🚀 READY FOR DEV ENVIRONMENT TESTING!");
+    console.log("");
+    console.log("🧪 Next Steps:");
+    console.log("  1. Run 'Dev Environment - Test Patient Creation'");
+    console.log("  2. Test other FHIR resources");
+    console.log("  3. Verify all CRUD operations");
+    console.log("");
+    console.log("⚠️  Security Metadata Required:");
+    console.log("  All resources must include meta.security with:");
+    console.log("  - access tag: https://www.icanbwell.com/access");
+    console.log("  - owner tag: https://www.icanbwell.com/owner");
+    console.log("  - sourceAssigningAuthority tag: https://www.icanbwell.com/sourceAssigningAuthority");
+    
+  } else {
+    console.log("❌ AUTHENTICATION FAILED");
+    console.log("Status:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    
+    if (res.body && res.body.error === "unauthorized_client") {
+      console.log("🔧 SOLUTION for 'unauthorized_client':");
+      console.log("  1. Check Auth0 Application Settings:");
+      console.log("     - Applications > Your App > Settings");
+      console.log("     - Advanced Settings > Grant Types");
+      console.log("     - ✅ Enable 'Client Credentials'");
+      console.log("  2. Verify client_id and client_secret");
+      console.log("  3. Check allowed origins/callback URLs");
+      
+    } else if (res.body && res.body.error === "access_denied") {
+      console.log("🔧 SOLUTION for 'access_denied':");
+      console.log("  1. Verify audience URL matches your FHIR server");
+      console.log("  2. Check Auth0 API permissions");
+      console.log("  3. Ensure client has required scopes");
+      
+    } else if (res.body && res.body.error === "invalid_client") {
+      console.log("🔧 SOLUTION for 'invalid_client':");
+      console.log("  1. Double-check client_id in dev environment");
+      console.log("  2. Verify client_secret is correct");
+      console.log("  3. Ensure client exists in Auth0");
+    }
+    
+    console.log("");
+    console.log("🔍 Current Dev Environment Settings:");
+    console.log("  Base URL:", "{{baseUrl}}");
+    console.log("  Auth URL:", "{{authUrl}}");
+    console.log("  Client ID:", "{{clientId}}");
+    console.log("  Audience:", "{{audience}}");
+    console.log("");
+    console.log("💡 Check these settings match your Auth0 configuration");
+  }
+  
+  console.log("");
+  console.log("=============================================");
+}

@@ -1,0 +1,178 @@
+meta {
+  name: Create Media
+  type: http
+  seq: 56
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Media
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Media",
+    "identifier": [
+      {
+        "system": "http://example.org/media-identifier",
+        "value": "MEDIA-XRAY-001"
+      }
+    ],
+    "basedOn": [
+      {
+        "reference": "ServiceRequest/{{lastCreatedServiceRequestId}}",
+        "display": "Chest X-Ray Order"
+      }
+    ],
+    "partOf": [
+      {
+        "reference": "Procedure/chest-xray-procedure-123"
+      }
+    ],
+    "status": "completed",
+    "type": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/media-type",
+          "code": "image",
+          "display": "Image"
+        }
+      ]
+    },
+    "modality": {
+      "coding": [
+        {
+          "system": "http://dicom.nema.org/resources/ontology/DCM",
+          "code": "DX",
+          "display": "Digital Radiography"
+        }
+      ]
+    },
+    "view": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "399208008",
+          "display": "Plain chest X-ray"
+        }
+      ]
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Radiology Visit"
+    },
+    "createdDateTime": "2024-01-15T15:30:00Z",
+    "issued": "2024-01-15T15:35:00Z",
+    "operator": {
+      "reference": "Practitioner/radiologic-technologist-123",
+      "display": "Michael Chen, RT"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "25064002",
+            "display": "Headache"
+          }
+        ],
+        "text": "Chest pain evaluation"
+      }
+    ],
+    "bodySite": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "51185008",
+          "display": "Thoracic structure"
+        }
+      ]
+    },
+    "deviceName": "Philips DigitalDiagnost C90",
+    "device": {
+      "reference": "Device/{{lastCreatedDeviceId}}",
+      "display": "Digital Radiography System"
+    },
+    "height": 2048,
+    "width": 2048,
+    "frames": 1,
+    "duration": 0.1,
+    "content": {
+      "contentType": "image/dicom",
+      "language": "en-US",
+      "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+      "url": "http://example.org/media/chest-xray-001.dcm",
+      "size": 1024000,
+      "hash": "SGVsbG8gV29ybGQ=",
+      "title": "Chest X-Ray - PA View",
+      "creation": "2024-01-15T15:30:00Z"
+    },
+    "note": [
+      {
+        "text": "PA chest radiograph obtained for evaluation of chest pain. Image quality is adequate for diagnostic interpretation."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Media created successfully");
+    console.log("Media ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Type:", res.body.type?.coding?.[0]?.display);
+    console.log("Modality:", res.body.modality?.coding?.[0]?.display);
+    console.log("View:", res.body.view?.coding?.[0]?.display);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Operator:", res.body.operator?.display);
+    console.log("Device:", res.body.deviceName);
+    console.log("Created:", res.body.createdDateTime);
+    console.log("Issued:", res.body.issued);
+    
+    if (res.body.content) {
+      console.log("\n📷 Content Details:");
+      console.log("Content Type:", res.body.content.contentType);
+      console.log("Title:", res.body.content.title);
+      console.log("Size:", res.body.content.size, "bytes");
+      console.log("URL:", res.body.content.url);
+      console.log("Creation:", res.body.content.creation);
+    }
+    
+    if (res.body.height && res.body.width) {
+      console.log("\n📐 Image Dimensions:");
+      console.log("Resolution:", res.body.width, "x", res.body.height);
+      console.log("Frames:", res.body.frames);
+      console.log("Duration:", res.body.duration, "seconds");
+    }
+    
+    if (res.body.reasonCode && res.body.reasonCode.length > 0) {
+      console.log("\n🎯 Reason Codes:");
+      res.body.reasonCode.forEach((reason, index) => {
+        console.log(`${index + 1}. ${reason.text || reason.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.bodySite) {
+      console.log("\n🫀 Body Site:", res.body.bodySite.coding?.[0]?.display);
+    }
+    
+    // Store the media ID for other requests
+    bru.setEnvVar("lastCreatedMediaId", res.body.id);
+  } else {
+    console.log("❌ Failed to create media:", res.status, res.body);
+  }
+}

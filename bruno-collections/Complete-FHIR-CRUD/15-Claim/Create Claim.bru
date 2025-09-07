@@ -1,0 +1,278 @@
+meta {
+  name: Create Claim
+  type: http
+  seq: 34
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Claim
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Claim",
+    "status": "active",
+    "type": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+          "code": "professional",
+          "display": "Professional"
+        }
+      ]
+    },
+    "use": "claim",
+    "patient": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "billablePeriod": {
+      "start": "2024-01-15",
+      "end": "2024-01-15"
+    },
+    "created": "2024-01-16T09:00:00Z",
+    "enterer": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "insurer": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "Healthcare Insurance Corp"
+    },
+    "provider": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "priority": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+          "code": "normal",
+          "display": "Normal"
+        }
+      ]
+    },
+    "fundsReserve": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/fundsreserve",
+          "code": "provider",
+          "display": "Provider"
+        }
+      ]
+    },
+    "related": [
+      {
+        "claim": {
+          "reference": "Claim/prior-claim-123"
+        },
+        "relationship": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/ex-relatedclaimrelationship",
+              "code": "prior",
+              "display": "Prior Claim"
+            }
+          ]
+        }
+      }
+    ],
+    "prescription": {
+      "reference": "MedicationRequest/{{lastCreatedMedicationRequestId}}"
+    },
+    "facility": {
+      "reference": "Location/{{lastCreatedLocationId}}",
+      "display": "General Hospital"
+    },
+    "careTeam": [
+      {
+        "sequence": 1,
+        "provider": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "role": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claimcareteamrole",
+              "code": "primary",
+              "display": "Primary provider"
+            }
+          ]
+        }
+      }
+    ],
+    "supportingInfo": [
+      {
+        "sequence": 1,
+        "category": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claiminformationcategory",
+              "code": "info",
+              "display": "Information"
+            }
+          ]
+        },
+        "valueString": "Patient presented with acute headache symptoms"
+      }
+    ],
+    "diagnosis": [
+      {
+        "sequence": 1,
+        "diagnosisCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "R51",
+              "display": "Headache"
+            }
+          ]
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/ex-diagnosistype",
+                "code": "principal",
+                "display": "Principal Diagnosis"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "procedure": [
+      {
+        "sequence": 1,
+        "date": "2024-01-15T10:30:00Z",
+        "procedureCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "99213",
+              "display": "Office or other outpatient visit"
+            }
+          ]
+        }
+      }
+    ],
+    "insurance": [
+      {
+        "sequence": 1,
+        "focal": true,
+        "identifier": {
+          "system": "http://healthinsurance.com/policy",
+          "value": "POL-123456789"
+        },
+        "coverage": {
+          "reference": "Coverage/coverage-123",
+          "display": "Primary Health Insurance"
+        }
+      }
+    ],
+    "accident": {
+      "date": "2024-01-14",
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v3-ActIncidentCode",
+            "code": "MVA",
+            "display": "Motor vehicle accident"
+          }
+        ]
+      },
+      "locationAddress": {
+        "line": ["123 Main Street"],
+        "city": "New York",
+        "state": "NY",
+        "postalCode": "10001"
+      }
+    },
+    "item": [
+      {
+        "sequence": 1,
+        "careTeamSequence": [1],
+        "diagnosisSequence": [1],
+        "procedureSequence": [1],
+        "informationSequence": [1],
+        "productOrService": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "99213",
+              "display": "Office or other outpatient visit"
+            }
+          ]
+        },
+        "modifier": [
+          {
+            "coding": [
+              {
+                "system": "http://www.ama-assn.org/go/cpt",
+                "code": "25",
+                "display": "Significant, separately identifiable E/M service"
+              }
+            ]
+          }
+        ],
+        "servicedDate": "2024-01-15",
+        "locationCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://www.cms.gov/Medicare/Coding/place-of-service-codes/Place_of_Service_Code_Set",
+              "code": "11",
+              "display": "Office"
+            }
+          ]
+        },
+        "quantity": {
+          "value": 1
+        },
+        "unitPrice": {
+          "value": 150.00,
+          "currency": "USD"
+        },
+        "net": {
+          "value": 150.00,
+          "currency": "USD"
+        }
+      }
+    ],
+    "total": {
+      "value": 150.00,
+      "currency": "USD"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Claim created successfully");
+    console.log("Claim ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Type:", res.body.type?.coding?.[0]?.display);
+    console.log("Patient:", res.body.patient?.display);
+    console.log("Provider:", res.body.provider?.display);
+    console.log("Total Amount:", res.body.total?.value, res.body.total?.currency);
+    console.log("Billable Period:", res.body.billablePeriod?.start, "to", res.body.billablePeriod?.end);
+    console.log("Primary Diagnosis:", res.body.diagnosis?.[0]?.diagnosisCodeableConcept?.coding?.[0]?.display);
+    console.log("Items:", res.body.item?.length || 0);
+    
+    // Store the claim ID for other requests
+    bru.setEnvVar("lastCreatedClaimId", res.body.id);
+  } else {
+    console.log("❌ Failed to create claim:", res.status, res.body);
+  }
+}

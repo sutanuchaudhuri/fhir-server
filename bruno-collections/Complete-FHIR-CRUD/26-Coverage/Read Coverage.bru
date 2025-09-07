@@ -1,0 +1,86 @@
+meta {
+  name: Read Coverage
+  type: http
+  seq: 94
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Coverage/{{lastCreatedCoverageId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const coverage = res.body;
+    console.log("✅ Coverage retrieved successfully");
+    console.log("Coverage ID:", coverage.id);
+    
+    console.log("\n📋 Coverage Details:");
+    console.log("Status:", coverage.status);
+    console.log("Type:", coverage.type?.coding?.[0]?.display);
+    console.log("Subscriber:", coverage.subscriber?.display);
+    console.log("Beneficiary:", coverage.beneficiary?.display);
+    console.log("Dependent:", coverage.dependent);
+    console.log("Relationship:", coverage.relationship?.coding?.[0]?.display);
+    console.log("Period:", `${coverage.period?.start} to ${coverage.period?.end || 'ongoing'}`);
+    
+    if (coverage.payor && coverage.payor.length > 0) {
+      console.log("\n💰 Payors:");
+      coverage.payor.forEach((payor, index) => {
+        console.log(`  ${index + 1}. ${payor.display}`);
+      });
+    }
+    
+    if (coverage.class && coverage.class.length > 0) {
+      console.log("\n🏷️ Coverage Classes:");
+      coverage.class.forEach((cls, index) => {
+        console.log(`  ${index + 1}. ${cls.type?.coding?.[0]?.display}: ${cls.value}`);
+        console.log(`     Name: ${cls.name}`);
+      });
+    }
+    
+    if (coverage.costToBeneficiary && coverage.costToBeneficiary.length > 0) {
+      console.log("\n💵 Cost to Beneficiary:");
+      coverage.costToBeneficiary.forEach((cost, index) => {
+        console.log(`  ${index + 1}. Type: ${cost.type?.coding?.[0]?.display}`);
+        if (cost.valueQuantity) {
+          console.log(`     Value: ${cost.valueQuantity.value} ${cost.valueQuantity.currency}`);
+        }
+        if (cost.valueMoney) {
+          console.log(`     Amount: ${cost.valueMoney.value} ${cost.valueMoney.currency}`);
+        }
+      });
+    }
+    
+    if (coverage.contract && coverage.contract.length > 0) {
+      console.log("\n📄 Contracts:");
+      coverage.contract.forEach((contract, index) => {
+        console.log(`  ${index + 1}. ${contract.display}`);
+      });
+    }
+    
+    console.log("\n📊 Coverage Summary:");
+    console.log("Network:", coverage.network);
+    console.log("Order:", coverage.order);
+    console.log("Subscriber ID:", coverage.subscriberId);
+    console.log("Created:", coverage.meta?.lastUpdated || "Unknown");
+    console.log("Version:", coverage.meta?.versionId || "1");
+    
+  } else if (res.status === 404) {
+    console.log("❌ Coverage not found");
+    console.log("The Coverage ID may be incorrect or the resource may have been deleted");
+    
+  } else {
+    console.log("❌ Failed to retrieve Coverage:", res.status);
+    console.log("Response:", res.body);
+  }
+}

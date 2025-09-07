@@ -1,0 +1,166 @@
+meta {
+  name: Read Procedure
+  type: http
+  seq: 67
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Procedure/{{lastCreatedProcedureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const procedure = res.body;
+    console.log("✅ Procedure retrieved successfully");
+    console.log("Procedure ID:", procedure.id);
+    
+    // Display key details
+    console.log("\n📋 Procedure Details:");
+    console.log("Status:", procedure.status || "Not specified");
+    console.log("Category:", procedure.category?.coding?.[0]?.display || procedure.category?.text || "Not specified");
+    console.log("Code:", procedure.code?.coding?.[0]?.display || procedure.code?.text || "Not specified");
+    console.log("Subject:", procedure.subject?.reference || "Not specified");
+    
+    // Display encounter and context
+    if (procedure.encounter) {
+      console.log("Encounter:", procedure.encounter.reference);
+    }
+    if (procedure.context) {
+      console.log("Context:", procedure.context.reference);
+    }
+    
+    // Display timing information
+    console.log("\n⏰ Timing Information:");
+    if (procedure.performedDateTime) {
+      console.log("Performed Date/Time:", procedure.performedDateTime);
+    } else if (procedure.performedPeriod) {
+      console.log("Performed Period:");
+      console.log("  Start:", procedure.performedPeriod.start || "Not specified");
+      console.log("  End:", procedure.performedPeriod.end || "Not specified");
+    } else {
+      console.log("Performed:", "Not specified");
+    }
+    
+    // Display performers
+    if (procedure.performer && procedure.performer.length > 0) {
+      console.log("\n👨‍⚕️ Performers:");
+      procedure.performer.forEach((performer, index) => {
+        console.log(`  ${index + 1}. ${performer.actor?.reference || "Unknown actor"}`);
+        if (performer.function) {
+          console.log(`     Function: ${performer.function.coding?.[0]?.display || performer.function.text || "Not specified"}`);
+        }
+        if (performer.onBehalfOf) {
+          console.log(`     On Behalf Of: ${performer.onBehalfOf.reference}`);
+        }
+      });
+    }
+    
+    // Display location
+    if (procedure.location) {
+      console.log("\n📍 Location:", procedure.location.reference);
+    }
+    
+    // Display reason
+    if (procedure.reasonCode && procedure.reasonCode.length > 0) {
+      console.log("\n💡 Reason (Code):");
+      procedure.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text || "Not specified"}`);
+      });
+    }
+    
+    if (procedure.reasonReference && procedure.reasonReference.length > 0) {
+      console.log("\n🔗 Reason (Reference):");
+      procedure.reasonReference.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.reference}`);
+      });
+    }
+    
+    // Display body site
+    if (procedure.bodySite && procedure.bodySite.length > 0) {
+      console.log("\n🎯 Body Site:");
+      procedure.bodySite.forEach((site, index) => {
+        console.log(`  ${index + 1}. ${site.coding?.[0]?.display || site.text || "Not specified"}`);
+      });
+    }
+    
+    // Display outcome
+    if (procedure.outcome) {
+      console.log("\n📊 Outcome:", procedure.outcome.coding?.[0]?.display || procedure.outcome.text || "Not specified");
+    }
+    
+    // Display complications
+    if (procedure.complication && procedure.complication.length > 0) {
+      console.log("\n⚠️  Complications:");
+      procedure.complication.forEach((comp, index) => {
+        console.log(`  ${index + 1}. ${comp.coding?.[0]?.display || comp.text || "Not specified"}`);
+      });
+    }
+    
+    // Display follow-up
+    if (procedure.followUp && procedure.followUp.length > 0) {
+      console.log("\n📅 Follow-up:");
+      procedure.followUp.forEach((followUp, index) => {
+        console.log(`  ${index + 1}. ${followUp.coding?.[0]?.display || followUp.text || "Not specified"}`);
+      });
+    }
+    
+    // Display notes
+    if (procedure.note && procedure.note.length > 0) {
+      console.log("\n📝 Notes:");
+      procedure.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+        if (note.time) {
+          console.log(`     Time: ${note.time}`);
+        }
+      });
+    }
+    
+    // Display focal devices
+    if (procedure.focalDevice && procedure.focalDevice.length > 0) {
+      console.log("\n🔧 Focal Devices:");
+      procedure.focalDevice.forEach((device, index) => {
+        console.log(`  ${index + 1}. Action: ${device.action?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`     Device: ${device.manipulated?.reference || "Not specified"}`);
+      });
+    }
+    
+    // Display used references
+    if (procedure.usedReference && procedure.usedReference.length > 0) {
+      console.log("\n🔗 Used References:");
+      procedure.usedReference.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.reference}`);
+      });
+    }
+    
+    // Display used codes
+    if (procedure.usedCode && procedure.usedCode.length > 0) {
+      console.log("\n💊 Used Codes:");
+      procedure.usedCode.forEach((code, index) => {
+        console.log(`  ${index + 1}. ${code.coding?.[0]?.display || code.text || "Not specified"}`);
+      });
+    }
+    
+    console.log("\n📊 Summary:");
+    console.log("Performers:", procedure.performer?.length || 0);
+    console.log("Body Sites:", procedure.bodySite?.length || 0);
+    console.log("Complications:", procedure.complication?.length || 0);
+    console.log("Notes:", procedure.note?.length || 0);
+    console.log("Resource Version:", procedure.meta?.versionId || "1");
+    console.log("Last Updated:", procedure.meta?.lastUpdated || "Not available");
+    
+  } else if (res.status === 404) {
+    console.log("❌ Procedure not found");
+  } else {
+    console.log("❌ Failed to retrieve Procedure:", res.status, res.body);
+  }
+}

@@ -1,0 +1,38 @@
+meta {
+  name: Search Practitioners
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Practitioner?family=Smith&_count=10&_sort=family
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Practitioner search completed successfully");
+    console.log("Total practitioners found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("Practitioners found:");
+      res.body.entry.forEach((entry, index) => {
+        const practitioner = entry.resource;
+        console.log(`${index + 1}. ${practitioner.name?.[0]?.prefix?.[0] || ""} ${practitioner.name?.[0]?.given?.join(" ")} ${practitioner.name?.[0]?.family} (ID: ${practitioner.id})`);
+      });
+    } else {
+      console.log("No practitioners found with family name 'Smith'");
+    }
+  } else {
+    console.log("❌ Failed to search practitioners:", res.status, res.body);
+  }
+}

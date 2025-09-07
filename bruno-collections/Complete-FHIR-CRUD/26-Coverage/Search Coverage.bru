@@ -1,0 +1,112 @@
+meta {
+  name: Search Coverage
+  type: http
+  seq: 97
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Coverage?patient={{lastCreatedPatientId}}&status=active&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Coverage search completed successfully");
+    console.log("Total results:", bundle.total);
+    console.log("Entries returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Coverage Search Results:");
+      bundle.entry.forEach((entry, index) => {
+        const coverage = entry.resource;
+        console.log(`\n${index + 1}. Coverage ID: ${coverage.id}`);
+        console.log(`   Status: ${coverage.status}`);
+        console.log(`   Type: ${coverage.type?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Subscriber: ${coverage.subscriber?.display || 'Not specified'}`);
+        console.log(`   Subscriber ID: ${coverage.subscriberId || 'Not specified'}`);
+        console.log(`   Beneficiary: ${coverage.beneficiary?.display || 'Not specified'}`);
+        console.log(`   Period: ${coverage.period?.start || 'Unknown'} to ${coverage.period?.end || 'ongoing'}`);
+        console.log(`   Network: ${coverage.network || 'Not specified'}`);
+        
+        if (coverage.payor && coverage.payor.length > 0) {
+          console.log(`   Payors: ${coverage.payor.map(p => p.display).join(', ')}`);
+        }
+        
+        if (coverage.class && coverage.class.length > 0) {
+          console.log(`   Classes: ${coverage.class.length}`);
+          coverage.class.forEach((cls, idx) => {
+            console.log(`     ${idx + 1}. ${cls.type?.coding?.[0]?.display}: ${cls.value} (${cls.name})`);
+          });
+        }
+        
+        if (coverage.costToBeneficiary && coverage.costToBeneficiary.length > 0) {
+          console.log(`   Cost Categories: ${coverage.costToBeneficiary.length}`);
+          coverage.costToBeneficiary.forEach((cost, idx) => {
+            const type = cost.type?.coding?.[0]?.display;
+            let value = '';
+            if (cost.valueQuantity) {
+              value = `${cost.valueQuantity.value} ${cost.valueQuantity.currency || cost.valueQuantity.unit}`;
+            } else if (cost.valueMoney) {
+              value = `${cost.valueMoney.value} ${cost.valueMoney.currency}`;
+            }
+            console.log(`     ${idx + 1}. ${type}: ${value}`);
+          });
+        }
+        
+        console.log(`   Last Updated: ${coverage.meta?.lastUpdated || 'Unknown'}`);
+      });
+      
+      // Store the first coverage ID for potential use
+      if (bundle.entry.length > 0) {
+        const firstCoverageId = bundle.entry[0].resource.id;
+        bru.setEnvVar("searchedCoverageId", firstCoverageId);
+        console.log(`\n💾 Stored first coverage ID in environment: ${firstCoverageId}`);
+      }
+      
+    } else {
+      console.log("\n📭 No coverage records found matching the search criteria");
+    }
+    
+    // Display pagination info
+    if (bundle.link) {
+      console.log("\n🔗 Available Links:");
+      bundle.link.forEach(link => {
+        console.log(`   ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📊 Search Summary:");
+    console.log("Search Parameters Used:");
+    console.log("- Patient:", "{{lastCreatedPatientId}}");
+    console.log("- Status: active");
+    console.log("- Count limit: 10");
+    console.log("Total found:", bundle.total);
+    console.log("Returned:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Coverage search failed:", res.status);
+    console.log("Response:", res.body);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n❌ Error Details:");
+      if (res.body.issue && res.body.issue.length > 0) {
+        res.body.issue.forEach((issue, index) => {
+          console.log(`Issue ${index + 1}:`);
+          console.log("  Severity:", issue.severity);
+          console.log("  Code:", issue.code);
+          console.log("  Details:", issue.details?.text || issue.diagnostics);
+        });
+      }
+    }
+  }
+}

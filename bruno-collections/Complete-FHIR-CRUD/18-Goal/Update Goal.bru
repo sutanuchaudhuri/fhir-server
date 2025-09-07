@@ -1,0 +1,175 @@
+meta {
+  name: Update Goal
+  type: http
+  seq: 45
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Goal/{{lastCreatedGoalId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Goal",
+    "id": "{{lastCreatedGoalId}}",
+    "identifier": [
+      {
+        "system": "http://example.org/goal-identifier",
+        "value": "GOAL-BP-2024-001"
+      }
+    ],
+    "lifecycleStatus": "active",
+    "achievementStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/goal-achievement",
+          "code": "improving",
+          "display": "Improving"
+        }
+      ]
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/goal-category",
+            "code": "physiotherapy",
+            "display": "Physiotherapy"
+          }
+        ]
+      }
+    ],
+    "priority": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/goal-priority",
+          "code": "high-priority",
+          "display": "High Priority"
+        }
+      ]
+    },
+    "description": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "182840001",
+          "display": "Drug allergy"
+        }
+      ],
+      "text": "Maintain blood pressure below 130/80 mmHg consistently"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "startDate": "2024-01-15",
+    "target": [
+      {
+        "measure": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "85354-9",
+              "display": "Blood pressure panel with all children optional"
+            }
+          ]
+        },
+        "detailRange": {
+          "low": {
+            "value": 80,
+            "unit": "mmHg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mm[Hg]"
+          },
+          "high": {
+            "value": 130,
+            "unit": "mmHg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mm[Hg]"
+          }
+        },
+        "dueDate": "2024-04-15"
+      }
+    ],
+    "statusDate": "2024-01-30",
+    "statusReason": "Patient showing good progress with medication adherence and lifestyle changes. Blood pressure readings have improved consistently over the past 2 weeks.",
+    "expressedBy": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "addresses": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Hypertension"
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient goal to maintain healthy blood pressure through medication adherence, diet modification, and regular exercise. Patient understands the importance of daily monitoring."
+      },
+      {
+        "text": "Progress update: Patient has been compliant with medication regimen and has implemented dietary changes. Average BP readings have dropped from 150/95 to 135/85 over the past two weeks."
+      },
+      {
+        "text": "Updated target to more aggressive BP control based on current guidelines and patient tolerance. Goal changed from <140/90 to <130/80."
+      }
+    ],
+    "outcomeCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "182840001",
+            "display": "Drug allergy"
+          }
+        ],
+        "text": "Improved blood pressure control"
+      }
+    ],
+    "outcomeReference": [
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}",
+        "display": "Recent blood pressure reading showing improvement"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Goal updated successfully");
+    console.log("Goal ID:", res.body.id);
+    console.log("Lifecycle Status:", res.body.lifecycleStatus);
+    console.log("Achievement Status:", res.body.achievementStatus?.coding?.[0]?.display);
+    console.log("Updated Priority:", res.body.priority?.coding?.[0]?.display);
+    console.log("Updated Description:", res.body.description?.text);
+    console.log("Status Date:", res.body.statusDate);
+    console.log("Status Reason:", res.body.statusReason);
+    
+    if (res.body.target && res.body.target.length > 0) {
+      console.log("\n🎯 Updated Targets:");
+      res.body.target.forEach((target, index) => {
+        console.log(`${index + 1}. ${target.measure?.coding?.[0]?.display}`);
+        if (target.detailRange) {
+          console.log(`   New Range: ${target.detailRange.low?.value}-${target.detailRange.high?.value} ${target.detailRange.low?.unit}`);
+        }
+        console.log(`   Due Date: ${target.dueDate}`);
+      });
+    }
+    
+    console.log("Total Notes:", res.body.note?.length || 0);
+  } else {
+    console.log("❌ Failed to update goal:", res.status, res.body);
+  }
+}

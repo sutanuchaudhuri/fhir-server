@@ -1,0 +1,34 @@
+meta {
+  name: Delete AllergyIntolerance
+  type: http
+  seq: 65
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/AllergyIntolerance/{{lastCreatedAllergyIntoleranceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ AllergyIntolerance deleted successfully");
+    console.log("Deleted AllergyIntolerance ID:", "{{lastCreatedAllergyIntoleranceId}}");
+    console.log("Response status:", res.status);
+    
+    // Clear the environment variable
+    bru.setEnvVar("lastCreatedAllergyIntoleranceId", "");
+  } else if (res.status === 404) {
+    console.log("⚠️  AllergyIntolerance not found (already deleted or never existed)");
+  } else {
+    console.log("❌ Failed to delete AllergyIntolerance:", res.status, res.body);
+  }
+}

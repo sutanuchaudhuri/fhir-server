@@ -1,0 +1,161 @@
+meta {
+  name: Read Location
+  type: http
+  seq: 77
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Location/{{lastCreatedLocationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const location = res.body;
+    console.log("✅ Location retrieved successfully");
+    console.log("Location ID:", location.id);
+    
+    // Display key details
+    console.log("\n📋 Location Details:");
+    console.log("Status:", location.status || "Not specified");
+    console.log("Name:", location.name || "Not specified");
+    console.log("Alias:", location.alias?.join(", ") || "None");
+    console.log("Description:", location.description || "Not specified");
+    console.log("Mode:", location.mode || "Not specified");
+    
+    // Display type
+    if (location.type && location.type.length > 0) {
+      console.log("\n🏷️  Type:");
+      location.type.forEach((type, index) => {
+        console.log(`  ${index + 1}. ${type.coding?.[0]?.display || type.text || "Not specified"}`);
+        if (type.coding?.[0]?.code) {
+          console.log(`     Code: ${type.coding[0].code} (${type.coding[0].system})`);
+        }
+      });
+    }
+    
+    // Display physical type
+    if (location.physicalType) {
+      console.log("\n🏢 Physical Type:");
+      console.log("Type:", location.physicalType.coding?.[0]?.display || location.physicalType.text || "Not specified");
+      if (location.physicalType.coding?.[0]?.code) {
+        console.log("Code:", location.physicalType.coding[0].code);
+      }
+    }
+    
+    // Display telecom
+    if (location.telecom && location.telecom.length > 0) {
+      console.log("\n📞 Contact Information:");
+      location.telecom.forEach((telecom, index) => {
+        console.log(`  ${index + 1}. ${telecom.system}: ${telecom.value}`);
+        if (telecom.use) {
+          console.log(`     Use: ${telecom.use}`);
+        }
+        if (telecom.rank) {
+          console.log(`     Rank: ${telecom.rank}`);
+        }
+      });
+    }
+    
+    // Display address
+    if (location.address) {
+      console.log("\n📍 Address:");
+      console.log("Use:", location.address.use || "Not specified");
+      console.log("Type:", location.address.type || "Not specified");
+      console.log("Text:", location.address.text || "Not specified");
+      
+      const addressLines = location.address.line || [];
+      if (addressLines.length > 0) {
+        console.log("Lines:", addressLines.join(", "));
+      }
+      console.log("City:", location.address.city || "Not specified");
+      console.log("District:", location.address.district || "Not specified");
+      console.log("State:", location.address.state || "Not specified");
+      console.log("Postal Code:", location.address.postalCode || "Not specified");
+      console.log("Country:", location.address.country || "Not specified");
+      
+      if (location.address.period) {
+        console.log("Period:", `${location.address.period.start || "?"} to ${location.address.period.end || "ongoing"}`);
+      }
+    }
+    
+    // Display position
+    if (location.position) {
+      console.log("\n🗺️  Geographic Position:");
+      console.log("Longitude:", location.position.longitude || "Not specified");
+      console.log("Latitude:", location.position.latitude || "Not specified");
+      console.log("Altitude:", location.position.altitude || "Not specified");
+    }
+    
+    // Display managing organization
+    if (location.managingOrganization) {
+      console.log("\n🏥 Managing Organization:");
+      console.log("Reference:", location.managingOrganization.reference);
+      console.log("Display:", location.managingOrganization.display || "Not specified");
+    }
+    
+    // Display part of
+    if (location.partOf) {
+      console.log("\n🔗 Part Of:");
+      console.log("Reference:", location.partOf.reference);
+      console.log("Display:", location.partOf.display || "Not specified");
+    }
+    
+    // Display hours of operation
+    if (location.hoursOfOperation && location.hoursOfOperation.length > 0) {
+      console.log("\n⏰ Hours of Operation:");
+      location.hoursOfOperation.forEach((hours, index) => {
+        console.log(`  Schedule ${index + 1}:`);
+        if (hours.daysOfWeek && hours.daysOfWeek.length > 0) {
+          console.log(`    Days: ${hours.daysOfWeek.join(", ")}`);
+        }
+        console.log(`    All Day: ${hours.allDay ? "Yes" : "No"}`);
+        if (!hours.allDay) {
+          console.log(`    Opening Time: ${hours.openingTime || "Not specified"}`);
+          console.log(`    Closing Time: ${hours.closingTime || "Not specified"}`);
+        }
+      });
+    }
+    
+    // Display availability exceptions
+    if (location.availabilityExceptions) {
+      console.log("\n❗ Availability Exceptions:");
+      console.log(location.availabilityExceptions);
+    }
+    
+    // Display endpoints
+    if (location.endpoint && location.endpoint.length > 0) {
+      console.log("\n🔗 Endpoints:");
+      location.endpoint.forEach((endpoint, index) => {
+        console.log(`  ${index + 1}. ${endpoint.reference}`);
+        if (endpoint.display) {
+          console.log(`     Display: ${endpoint.display}`);
+        }
+      });
+    }
+    
+    console.log("\n📊 Summary:");
+    console.log("Types:", location.type?.length || 0);
+    console.log("Contact Methods:", location.telecom?.length || 0);
+    console.log("Has Address:", location.address ? "Yes" : "No");
+    console.log("Has Position:", location.position ? "Yes" : "No");
+    console.log("Has Hours:", location.hoursOfOperation?.length || 0);
+    console.log("Endpoints:", location.endpoint?.length || 0);
+    console.log("Resource Version:", location.meta?.versionId || "1");
+    console.log("Last Updated:", location.meta?.lastUpdated || "Not available");
+    
+  } else if (res.status === 404) {
+    console.log("❌ Location not found");
+  } else {
+    console.log("❌ Failed to retrieve Location:", res.status, res.body);
+  }
+}

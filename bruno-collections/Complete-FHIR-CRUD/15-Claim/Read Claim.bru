@@ -1,0 +1,74 @@
+meta {
+  name: Read Claim
+  type: http
+  seq: 35
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Claim/{{lastCreatedClaimId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Claim retrieved successfully");
+    console.log("Claim ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Status:", res.body.status);
+    console.log("Type:", res.body.type?.coding?.[0]?.display);
+    console.log("Use:", res.body.use);
+    
+    console.log("\n💰 Claim Details:");
+    console.log("Patient:", res.body.patient?.display);
+    console.log("Provider:", res.body.provider?.display);
+    console.log("Insurer:", res.body.insurer?.display);
+    console.log("Total Amount:", res.body.total?.value, res.body.total?.currency);
+    console.log("Created:", res.body.created);
+    console.log("Billable Period:", res.body.billablePeriod?.start, "to", res.body.billablePeriod?.end);
+    
+    if (res.body.diagnosis && res.body.diagnosis.length > 0) {
+      console.log("\n🏥 Diagnoses:");
+      res.body.diagnosis.forEach((diag, index) => {
+        console.log(`${index + 1}. ${diag.diagnosisCodeableConcept?.coding?.[0]?.display} (${diag.diagnosisCodeableConcept?.coding?.[0]?.code})`);
+        console.log(`   Type: ${diag.type?.[0]?.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.procedure && res.body.procedure.length > 0) {
+      console.log("\n🔬 Procedures:");
+      res.body.procedure.forEach((proc, index) => {
+        console.log(`${index + 1}. ${proc.procedureCodeableConcept?.coding?.[0]?.display} (${proc.procedureCodeableConcept?.coding?.[0]?.code})`);
+        console.log(`   Date: ${proc.date}`);
+      });
+    }
+    
+    if (res.body.item && res.body.item.length > 0) {
+      console.log("\n📋 Claim Items:");
+      res.body.item.forEach((item, index) => {
+        console.log(`${index + 1}. ${item.productOrService?.coding?.[0]?.display}`);
+        console.log(`   Quantity: ${item.quantity?.value}`);
+        console.log(`   Unit Price: ${item.unitPrice?.value} ${item.unitPrice?.currency}`);
+        console.log(`   Net: ${item.net?.value} ${item.net?.currency}`);
+        console.log(`   Service Date: ${item.servicedDate}`);
+      });
+    }
+    
+    if (res.body.careTeam && res.body.careTeam.length > 0) {
+      console.log("\n👥 Care Team:");
+      res.body.careTeam.forEach((member, index) => {
+        console.log(`${index + 1}. ${member.provider?.display} - ${member.role?.coding?.[0]?.display}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve claim:", res.status, res.body);
+  }
+}

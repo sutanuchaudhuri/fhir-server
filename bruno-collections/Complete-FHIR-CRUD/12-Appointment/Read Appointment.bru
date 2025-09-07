@@ -1,0 +1,36 @@
+meta {
+  name: Read Appointment
+  type: http
+  seq: 121
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Appointment/{{lastCreatedAppointmentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Appointment retrieved successfully");
+    console.log("Appointment ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Start:", res.body.start);
+    console.log("End:", res.body.end);
+    console.log("Duration:", res.body.minutesDuration, "minutes");
+    console.log("Description:", res.body.description);
+    console.log("Service Type:", res.body.serviceType?.[0]?.coding?.[0]?.display);
+  } else if (res.status === 404) {
+    console.log("❌ Appointment not found - please create an appointment first");
+  } else {
+    console.log("❌ Failed to retrieve appointment:", res.status, res.body);
+  }
+}

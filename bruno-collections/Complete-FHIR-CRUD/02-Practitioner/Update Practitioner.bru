@@ -1,0 +1,136 @@
+meta {
+  name: Update Practitioner
+  type: http
+  seq: 24
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Practitioner/{{lastCreatedPractitionerId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Practitioner",
+    "id": "{{lastCreatedPractitionerId}}",
+    "active": true,
+    "name": [
+      {
+        "use": "official",
+        "family": "Smith",
+        "given": ["Emily", "Jane"],
+        "prefix": ["Dr."],
+        "suffix": ["MD"]
+      }
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "555-234-5678",
+        "use": "work"
+      },
+      {
+        "system": "phone",
+        "value": "555-234-5679",
+        "use": "mobile"
+      },
+      {
+        "system": "email",
+        "value": "emily.smith@hospital.com",
+        "use": "work"
+      },
+      {
+        "system": "email",
+        "value": "dr.smith@medicalpractice.com",
+        "use": "work"
+      }
+    ],
+    "address": [
+      {
+        "use": "work",
+        "line": ["789 Medical Center Dr", "Suite 200"],
+        "city": "Boston",
+        "state": "MA",
+        "postalCode": "02115",
+        "country": "US"
+      }
+    ],
+    "gender": "female",
+    "birthDate": "1978-09-22",
+    "qualification": [
+      {
+        "identifier": [
+          {
+            "system": "http://example.org/medical-license",
+            "value": "MD789456"
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v2-0360",
+              "code": "MD",
+              "display": "Doctor of Medicine"
+            }
+          ]
+        },
+        "period": {
+          "start": "2008-06-01"
+        },
+        "issuer": {
+          "display": "Massachusetts Medical Board"
+        }
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "394814009",
+              "display": "General practice"
+            }
+          ]
+        },
+        "period": {
+          "start": "2012-01-01"
+        }
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "394579002",
+              "display": "Cardiology"
+            }
+          ]
+        },
+        "period": {
+          "start": "2015-01-01"
+        }
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Practitioner updated successfully");
+    console.log("Updated Practitioner ID:", res.body.id);
+    console.log("Name:", res.body.name?.[0]?.prefix?.[0], res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family, res.body.name?.[0]?.suffix?.[0]);
+    console.log("Total contact methods:", res.body.telecom?.length || 0);
+    console.log("Total qualifications:", res.body.qualification?.length || 0);
+  } else {
+    console.log("❌ Failed to update practitioner:", res.status, res.body);
+  }
+}

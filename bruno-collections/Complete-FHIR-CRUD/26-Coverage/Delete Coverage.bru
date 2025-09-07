@@ -1,0 +1,84 @@
+meta {
+  name: Delete Coverage
+  type: http
+  seq: 96
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Coverage/{{lastCreatedCoverageId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Coverage deleted successfully");
+    console.log("Status:", res.status);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n📋 Operation Details:");
+      console.log("Severity:", res.body.issue?.[0]?.severity);
+      console.log("Code:", res.body.issue?.[0]?.code);
+      console.log("Details:", res.body.issue?.[0]?.details?.text || res.body.issue?.[0]?.diagnostics);
+    }
+    
+    console.log("\n🗑️ Cleanup Actions:");
+    console.log("Removing coverageId from environment...");
+    
+    // Clear the environment variable
+    bru.setEnvVar("lastCreatedCoverageId", "");
+    
+    console.log("✅ Environment cleaned up successfully");
+    console.log("Note: Claims and other resources referencing this coverage may need updates");
+    
+  } else if (res.status === 404) {
+    console.log("⚠️ Coverage not found (already deleted or never existed)");
+    console.log("Cleaning up environment variable anyway...");
+    bru.setEnvVar("lastCreatedCoverageId", "");
+    
+  } else if (res.status === 410) {
+    console.log("⚠️ Coverage was already deleted");
+    console.log("Resource is marked as deleted but may still exist in history");
+    bru.setEnvVar("lastCreatedCoverageId", "");
+    
+  } else {
+    console.log("❌ Failed to delete Coverage");
+    console.log("Status:", res.status);
+    console.log("Response:", res.body);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n❌ Error Details:");
+      if (res.body.issue && res.body.issue.length > 0) {
+        res.body.issue.forEach((issue, index) => {
+          console.log(`Issue ${index + 1}:`);
+          console.log("  Severity:", issue.severity);
+          console.log("  Code:", issue.code);
+          console.log("  Details:", issue.details?.text || issue.diagnostics);
+          if (issue.location) {
+            console.log("  Location:", issue.location.join(", "));
+          }
+          if (issue.expression) {
+            console.log("  Expression:", issue.expression.join(", "));
+          }
+        });
+      }
+    }
+    
+    console.log("\n🔧 Troubleshooting Tips:");
+    console.log("1. Verify the Coverage ID exists");
+    console.log("2. Check if you have permission to delete this resource");
+    console.log("3. Ensure the coverage is not referenced by active claims");
+    console.log("4. Check if the coverage is not linked to active encounters");
+    console.log("5. Verify server supports DELETE operations");
+    console.log("6. Consider updating status to 'cancelled' instead of deleting");
+    console.log("7. Check if coverage is required for billing compliance");
+  }
+}

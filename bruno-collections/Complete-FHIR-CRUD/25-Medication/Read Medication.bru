@@ -1,0 +1,107 @@
+meta {
+  name: Read Medication
+  type: http
+  seq: 73
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Medication/{{lastCreatedMedicationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const medication = res.body;
+    console.log("✅ Medication retrieved successfully");
+    console.log("Medication ID:", medication.id);
+    
+    // Display key details
+    console.log("\n📋 Medication Details:");
+    console.log("Status:", medication.status || "Not specified");
+    console.log("Manufacturer:", medication.manufacturer?.display || medication.manufacturer?.reference || "Not specified");
+    
+    // Display medication code
+    if (medication.code) {
+      console.log("\n💊 Medication Code:");
+      medication.code.coding?.forEach((coding, index) => {
+        console.log(`  ${index + 1}. ${coding.display || coding.code} (${coding.system})`);
+      });
+      if (medication.code.text) {
+        console.log(`  Text: ${medication.code.text}`);
+      }
+    }
+    
+    // Display form
+    if (medication.form) {
+      console.log("\n📝 Form:");
+      console.log("Form:", medication.form.coding?.[0]?.display || medication.form.text || "Not specified");
+    }
+    
+    // Display ingredients
+    if (medication.ingredient && medication.ingredient.length > 0) {
+      console.log("\n🧪 Ingredients:");
+      medication.ingredient.forEach((ingredient, index) => {
+        console.log(`  Ingredient ${index + 1}:`);
+        
+        if (ingredient.itemCodeableConcept) {
+          console.log(`    Substance: ${ingredient.itemCodeableConcept.coding?.[0]?.display || ingredient.itemCodeableConcept.text || "Not specified"}`);
+        } else if (ingredient.itemReference) {
+          console.log(`    Substance Reference: ${ingredient.itemReference.reference}`);
+        }
+        
+        if (ingredient.strength) {
+          const strength = ingredient.strength;
+          let strengthText = "Not specified";
+          
+          if (strength.numerator && strength.denominator) {
+            strengthText = `${strength.numerator.value} ${strength.numerator.unit} per ${strength.denominator.value} ${strength.denominator.unit}`;
+          } else if (strength.concentration) {
+            strengthText = `${strength.concentration.value} ${strength.concentration.unit}`;
+          }
+          
+          console.log(`    Strength: ${strengthText}`);
+        }
+        
+        console.log(`    Is Active: ${ingredient.isActive !== false ? "Yes" : "No"}`);
+      });
+    }
+    
+    // Display batch information
+    if (medication.batch) {
+      console.log("\n📦 Batch Information:");
+      console.log("Lot Number:", medication.batch.lotNumber || "Not specified");
+      console.log("Expiration Date:", medication.batch.expirationDate || "Not specified");
+    }
+    
+    // Display amount
+    if (medication.amount) {
+      console.log("\n📏 Amount:");
+      if (medication.amount.numerator && medication.amount.denominator) {
+        console.log(`Amount: ${medication.amount.numerator.value} ${medication.amount.numerator.unit} per ${medication.amount.denominator.value} ${medication.amount.denominator.unit}`);
+      } else {
+        console.log("Amount: Complex amount structure");
+      }
+    }
+    
+    console.log("\n📊 Summary:");
+    console.log("Ingredients:", medication.ingredient?.length || 0);
+    console.log("Has Batch Info:", medication.batch ? "Yes" : "No");
+    console.log("Has Amount Info:", medication.amount ? "Yes" : "No");
+    console.log("Resource Version:", medication.meta?.versionId || "1");
+    console.log("Last Updated:", medication.meta?.lastUpdated || "Not available");
+    
+  } else if (res.status === 404) {
+    console.log("❌ Medication not found");
+  } else {
+    console.log("❌ Failed to retrieve Medication:", res.status, res.body);
+  }
+}

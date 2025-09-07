@@ -1,0 +1,288 @@
+meta {
+  name: Create CareTeam
+  type: http
+  seq: 48
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/CareTeam
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "CareTeam",
+    "identifier": [
+      {
+        "system": "http://example.org/careteam-identifier",
+        "value": "CT-HTN-2024-001"
+      }
+    ],
+    "status": "active",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "LA27976-2",
+            "display": "Multidisciplinary"
+          }
+        ]
+      }
+    ],
+    "name": "Hypertension Management Team",
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Initial Hypertension Consultation"
+    },
+    "period": {
+      "start": "2024-01-15",
+      "end": "2024-07-15"
+    },
+    "participant": [
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "17561000",
+                "display": "Cardiologist"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "onBehalfOf": {
+          "reference": "Organization/{{lastCreatedOrganizationId}}",
+          "display": "General Hospital"
+        },
+        "period": {
+          "start": "2024-01-15"
+        }
+      },
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "768820003",
+                "display": "Care coordinator"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "Practitioner/care-coordinator-123",
+          "display": "Sarah Johnson, RN"
+        },
+        "onBehalfOf": {
+          "reference": "Organization/{{lastCreatedOrganizationId}}"
+        },
+        "period": {
+          "start": "2024-01-15"
+        }
+      },
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "159026005",
+                "display": "Speech and language therapist"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "Practitioner/pharmacist-456",
+          "display": "Michael Chen, PharmD"
+        },
+        "onBehalfOf": {
+          "reference": "Organization/pharmacy-org-789"
+        },
+        "period": {
+          "start": "2024-01-15"
+        }
+      },
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "159033005",
+                "display": "Dietitian"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "Practitioner/dietitian-789",
+          "display": "Lisa Wong, RD"
+        },
+        "onBehalfOf": {
+          "reference": "Organization/{{lastCreatedOrganizationId}}"
+        },
+        "period": {
+          "start": "2024-01-20"
+        }
+      },
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/practitioner-role",
+                "code": "patient",
+                "display": "Patient"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "Patient/{{lastCreatedPatientId}}",
+          "display": "John Michael Doe"
+        },
+        "period": {
+          "start": "2024-01-15"
+        }
+      },
+      {
+        "role": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                "code": "CAREGIVER",
+                "display": "Caregiver"
+              }
+            ]
+          }
+        ],
+        "member": {
+          "reference": "RelatedPerson/spouse-456",
+          "display": "Jane Doe (Spouse)"
+        },
+        "period": {
+          "start": "2024-01-15"
+        }
+      }
+    ],
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "38341003",
+            "display": "Hypertensive disorder"
+          }
+        ]
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Essential Hypertension"
+      }
+    ],
+    "managingOrganization": [
+      {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "General Hospital"
+      }
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "555-CARE-TEAM",
+        "use": "work"
+      },
+      {
+        "system": "email",
+        "value": "careteam.htn@hospital.com",
+        "use": "work"
+      }
+    ],
+    "note": [
+      {
+        "text": "Multidisciplinary team assembled to provide comprehensive hypertension management. Team will coordinate care to ensure optimal blood pressure control through medication management, lifestyle counseling, and regular monitoring."
+      },
+      {
+        "text": "Care coordination meetings scheduled bi-weekly. Patient and family actively involved in care planning and decision making."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ CareTeam created successfully");
+    console.log("CareTeam ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Name:", res.body.name);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    console.log("Participants:", res.body.participant?.length || 0);
+    
+    if (res.body.category && res.body.category.length > 0) {
+      console.log("Categories:", res.body.category.map(c => c.coding?.[0]?.display).join(", "));
+    }
+    
+    if (res.body.participant && res.body.participant.length > 0) {
+      console.log("\n👥 Team Members:");
+      res.body.participant.forEach((participant, index) => {
+        const role = participant.role?.[0]?.coding?.[0]?.display || "Unknown Role";
+        const member = participant.member?.display || participant.member?.reference;
+        const organization = participant.onBehalfOf?.display || "";
+        const period = participant.period?.start;
+        
+        console.log(`${index + 1}. ${member}`);
+        console.log(`   Role: ${role}`);
+        if (organization) {
+          console.log(`   Organization: ${organization}`);
+        }
+        console.log(`   Start Date: ${period}`);
+        console.log("");
+      });
+    }
+    
+    if (res.body.reasonCode && res.body.reasonCode.length > 0) {
+      console.log("🎯 Reason Codes:");
+      res.body.reasonCode.forEach((reason, index) => {
+        console.log(`${index + 1}. ${reason.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.managingOrganization && res.body.managingOrganization.length > 0) {
+      console.log("\n🏥 Managing Organizations:");
+      res.body.managingOrganization.forEach((org, index) => {
+        console.log(`${index + 1}. ${org.display || org.reference}`);
+      });
+    }
+    
+    // Store the care team ID for other requests
+    bru.setEnvVar("lastCreatedCareTeamId", res.body.id);
+  } else {
+    console.log("❌ Failed to create care team:", res.status, res.body);
+  }
+}

@@ -1,0 +1,187 @@
+meta {
+  name: Search Medications
+  type: http
+  seq: 75
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Medication?status=active&_sort=code&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Medication search completed successfully");
+    
+    // Display search parameters
+    console.log("\n🔍 Search Parameters:");
+    console.log("Status:", "active");
+    console.log("Sort Order:", "By code");
+    console.log("Max Results:", "10");
+    
+    // Display bundle information
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    console.log("Bundle Type:", bundle.type);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Medication Details:");
+      
+      bundle.entry.forEach((entry, index) => {
+        const medication = entry.resource;
+        console.log(`\n  --- Medication ${index + 1} ---`);
+        console.log(`  ID: ${medication.id}`);
+        console.log(`  Status: ${medication.status}`);
+        
+        // Display medication code and name
+        if (medication.code) {
+          const primaryCoding = medication.code.coding?.[0];
+          console.log(`  Name: ${primaryCoding?.display || medication.code.text || "Not specified"}`);
+          console.log(`  Code: ${primaryCoding?.code || "Not specified"}`);
+          console.log(`  System: ${primaryCoding?.system || "Not specified"}`);
+        } else {
+          console.log(`  Name: Not specified`);
+        }
+        
+        // Display form
+        if (medication.form) {
+          console.log(`  Form: ${medication.form.coding?.[0]?.display || medication.form.text || "Not specified"}`);
+        } else {
+          console.log(`  Form: Not specified`);
+        }
+        
+        // Display manufacturer
+        console.log(`  Manufacturer: ${medication.manufacturer?.display || medication.manufacturer?.reference || "Not specified"}`);
+        
+        // Display ingredient summary
+        if (medication.ingredient && medication.ingredient.length > 0) {
+          const activeIngredients = medication.ingredient.filter(i => i.isActive !== false);
+          const inactiveIngredients = medication.ingredient.filter(i => i.isActive === false);
+          
+          console.log(`  Total Ingredients: ${medication.ingredient.length}`);
+          console.log(`  Active Ingredients: ${activeIngredients.length}`);
+          
+          if (activeIngredients.length > 0) {
+            console.log(`  Main Active: ${activeIngredients[0].itemCodeableConcept?.coding?.[0]?.display || activeIngredients[0].itemCodeableConcept?.text || "Unknown"}`);
+            
+            // Display strength of main active ingredient
+            if (activeIngredients[0].strength) {
+              const strength = activeIngredients[0].strength;
+              console.log(`  Strength: ${strength.numerator?.value} ${strength.numerator?.unit} per ${strength.denominator?.value} ${strength.denominator?.unit}`);
+            }
+          }
+        } else {
+          console.log(`  Ingredients: None listed`);
+        }
+        
+        // Display batch info if available
+        if (medication.batch) {
+          console.log(`  Lot Number: ${medication.batch.lotNumber || "Not specified"}`);
+          console.log(`  Expiration: ${medication.batch.expirationDate || "Not specified"}`);
+        }
+        
+        // Display amount if available
+        if (medication.amount) {
+          console.log(`  Package Size: ${medication.amount.numerator?.value} ${medication.amount.numerator?.unit} per ${medication.amount.denominator?.value} ${medication.amount.denominator?.unit}`);
+        }
+        
+        console.log(`  Last Updated: ${medication.meta?.lastUpdated || "Not available"}`);
+      });
+      
+      // Display form breakdown
+      console.log("\n📊 Form Breakdown:");
+      const forms = {};
+      bundle.entry.forEach(entry => {
+        const form = entry.resource.form?.coding?.[0]?.display || 
+                    entry.resource.form?.text || 
+                    "Unspecified";
+        forms[form] = (forms[form] || 0) + 1;
+      });
+      Object.entries(forms).forEach(([form, count]) => {
+        console.log(`  ${form}: ${count}`);
+      });
+      
+      // Display status breakdown
+      console.log("\n📈 Status Breakdown:");
+      const statuses = {};
+      bundle.entry.forEach(entry => {
+        const status = entry.resource.status || "unknown";
+        statuses[status] = (statuses[status] || 0) + 1;
+      });
+      Object.entries(statuses).forEach(([status, count]) => {
+        console.log(`  ${status}: ${count}`);
+      });
+      
+      // Display manufacturer breakdown
+      console.log("\n🏭 Manufacturer Breakdown:");
+      const manufacturers = {};
+      bundle.entry.forEach(entry => {
+        const manufacturer = entry.resource.manufacturer?.display || 
+                            entry.resource.manufacturer?.reference || 
+                            "Unknown";
+        manufacturers[manufacturer] = (manufacturers[manufacturer] || 0) + 1;
+      });
+      Object.entries(manufacturers).forEach(([manufacturer, count]) => {
+        console.log(`  ${manufacturer}: ${count}`);
+      });
+      
+      // Display ingredient statistics
+      console.log("\n🧪 Ingredient Statistics:");
+      let totalIngredients = 0;
+      let totalActive = 0;
+      let totalInactive = 0;
+      let withBatch = 0;
+      
+      bundle.entry.forEach(entry => {
+        if (entry.resource.ingredient) {
+          totalIngredients += entry.resource.ingredient.length;
+          totalActive += entry.resource.ingredient.filter(i => i.isActive !== false).length;
+          totalInactive += entry.resource.ingredient.filter(i => i.isActive === false).length;
+        }
+        if (entry.resource.batch) {
+          withBatch++;
+        }
+      });
+      
+      console.log(`  Total Ingredients Across All Medications: ${totalIngredients}`);
+      console.log(`  Total Active Ingredients: ${totalActive}`);
+      console.log(`  Total Inactive Ingredients: ${totalInactive}`);
+      console.log(`  Medications with Batch Info: ${withBatch}/${bundle.entry.length}`);
+      
+    } else {
+      console.log("\n📭 No Medications found for the specified criteria");
+      console.log("This could mean:");
+      console.log("• No medications with 'active' status");
+      console.log("• No medications in the system");
+      console.log("• Search parameters too restrictive");
+    }
+    
+    // Display navigation links
+    if (bundle.link && bundle.link.length > 0) {
+      console.log("\n🔗 Navigation Links:");
+      bundle.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📋 Search Summary:");
+    console.log("Search URL:", res.url);
+    console.log("Response Time:", res.responseTime ? `${res.responseTime}ms` : "Not available");
+    console.log("Total Found:", bundle.total || 0);
+    console.log("Showing:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to search Medications:", res.status, res.body);
+  }
+}

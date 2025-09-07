@@ -1,0 +1,109 @@
+meta {
+  name: Create AllergyIntolerance
+  type: http
+  seq: 80
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/AllergyIntolerance
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "AllergyIntolerance",
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+          "code": "active",
+          "display": "Active"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "type": "allergy",
+    "category": ["medication"],
+    "criticality": "high",
+    "code": {
+      "coding": [
+        {
+          "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+          "code": "7980",
+          "display": "Penicillin"
+        }
+      ]
+    },
+    "patient": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}"
+    },
+    "onsetDateTime": "2020-05-15T00:00:00Z",
+    "recordedDate": "2024-01-15T14:50:00Z",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "reaction": [
+      {
+        "substance": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "Penicillin"
+            }
+          ]
+        },
+        "manifestation": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "247472004",
+                "display": "Hives"
+              }
+            ]
+          }
+        ],
+        "severity": "moderate"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ AllergyIntolerance created successfully");
+    console.log("AllergyIntolerance ID:", res.body.id);
+    console.log("Code:", res.body.code?.coding?.[0]?.display);
+    console.log("Criticality:", res.body.criticality);
+    console.log("Clinical Status:", res.body.clinicalStatus?.coding?.[0]?.display);
+    
+    // Store the allergy intolerance ID for use in other requests
+    bru.setVar("lastCreatedAllergyIntoleranceId", res.body.id);
+  } else {
+    console.log("❌ Failed to create allergy intolerance:", res.status, res.body);
+  }
+}

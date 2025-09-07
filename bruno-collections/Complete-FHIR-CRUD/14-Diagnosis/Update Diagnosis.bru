@@ -1,0 +1,160 @@
+meta {
+  name: Update Diagnosis
+  type: http
+  seq: 29
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition/{{lastCreatedConditionId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Condition",
+    "id": "{{lastCreatedConditionId}}",
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "resolved",
+          "display": "Resolved"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ]
+      }
+    ],
+    "severity": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "255604002",
+          "display": "Mild"
+        }
+      ]
+    },
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "25064002",
+          "display": "Headache"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10",
+          "code": "R51",
+          "display": "Headache"
+        }
+      ],
+      "text": "Tension headache - resolved"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Patient"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Current Encounter"
+    },
+    "onsetDateTime": "2024-01-15T08:30:00Z",
+    "abatementDateTime": "2024-01-20T14:00:00Z",
+    "recordedDate": "2024-01-15T09:00:00Z",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "asserter": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "stage": [
+      {
+        "summary": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "255604002",
+              "display": "Mild"
+            }
+          ]
+        },
+        "assessment": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}"
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "25064002",
+                "display": "Headache"
+              }
+            ]
+          }
+        ],
+        "detail": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}"
+          }
+        ]
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient reports recurring headaches for the past week. Pain is moderate, located in frontal region. Triggered by stress and lack of sleep."
+      },
+      {
+        "text": "Follow-up: Patient reports significant improvement after stress management and sleep hygiene counseling. Headaches resolved after 5 days of treatment."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Diagnosis updated successfully");
+    console.log("Condition ID:", res.body.id);
+    console.log("Clinical Status:", res.body.clinicalStatus?.coding?.[0]?.display);
+    console.log("Updated Diagnosis:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Severity:", res.body.severity?.coding?.[0]?.display);
+    console.log("Onset:", res.body.onsetDateTime);
+    console.log("Resolution:", res.body.abatementDateTime);
+    console.log("Total notes:", res.body.note?.length || 0);
+  } else {
+    console.log("❌ Failed to update diagnosis:", res.status, res.body);
+  }
+}

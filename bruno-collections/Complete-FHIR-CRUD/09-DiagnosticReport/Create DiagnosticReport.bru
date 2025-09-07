@@ -1,0 +1,83 @@
+meta {
+  name: Create DiagnosticReport
+  type: http
+  seq: 90
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/DiagnosticReport
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "DiagnosticReport",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+            "code": "LAB",
+            "display": "Laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "24323-8",
+          "display": "Comprehensive metabolic panel"
+        }
+      ]
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}"
+    },
+    "effectiveDateTime": "2024-01-15T08:00:00Z",
+    "issued": "2024-01-15T12:00:00Z",
+    "performer": [
+      {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "City General Hospital Lab"
+      }
+    ],
+    "result": [
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}"
+      }
+    ],
+    "conclusion": "All values within normal limits except for mildly elevated glucose."
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ DiagnosticReport created successfully");
+    console.log("DiagnosticReport ID:", res.body.id);
+    console.log("Code:", res.body.code?.coding?.[0]?.display);
+    console.log("Status:", res.body.status);
+    console.log("Category:", res.body.category?.[0]?.coding?.[0]?.display);
+    
+    // Store the diagnostic report ID for use in other requests
+    bru.setVar("lastCreatedDiagnosticReportId", res.body.id);
+  } else {
+    console.log("❌ Failed to create diagnostic report:", res.status, res.body);
+  }
+}

@@ -1,0 +1,222 @@
+meta {
+  name: Create Procedure
+  type: http
+  seq: 36
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Procedure
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Procedure",
+    "status": "completed",
+    "category": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "103693007",
+          "display": "Diagnostic procedure"
+        }
+      ],
+      "text": "Diagnostic procedure"
+    },
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "182777000",
+          "display": "Magnetic resonance imaging of head"
+        },
+        {
+          "system": "http://www.ama-assn.org/go/cpt",
+          "code": "70551",
+          "display": "MRI brain without contrast"
+        }
+      ],
+      "text": "Brain MRI without contrast"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Current encounter"
+    },
+    "performedDateTime": "2024-01-15T14:30:00Z",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "performer": [
+      {
+        "function": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "17561000",
+              "display": "Cardiologist"
+            }
+          ]
+        },
+        "actor": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        }
+      }
+    ],
+    "location": {
+      "reference": "Location/{{lastCreatedLocationId}}",
+      "display": "Radiology Department"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "25064002",
+            "display": "Headache"
+          }
+        ],
+        "text": "Persistent headaches requiring imaging"
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Headache condition"
+      }
+    ],
+    "bodySite": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "69536005",
+            "display": "Head structure"
+          }
+        ],
+        "text": "Head"
+      }
+    ],
+    "outcome": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "385669000",
+          "display": "Successful"
+        }
+      ],
+      "text": "Procedure completed successfully"
+    },
+    "report": [
+      {
+        "reference": "DiagnosticReport/{{lastCreatedDiagnosticReportId}}",
+        "display": "MRI Brain Report"
+      }
+    ],
+    "complication": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "182840001",
+            "display": "Drug allergy"
+          }
+        ],
+        "text": "Mild allergic reaction to contrast agent"
+      }
+    ],
+    "complicationDetail": [
+      {
+        "reference": "Condition/allergy-condition-123",
+        "display": "Contrast allergy"
+      }
+    ],
+    "followUp": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "18949003",
+            "display": "Change of dressing"
+          }
+        ],
+        "text": "Follow-up appointment in 2 weeks"
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient tolerated the procedure well. No immediate complications observed. Images show normal brain anatomy with no abnormalities detected."
+      }
+    ],
+    "focalDevice": [
+      {
+        "action": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "129264002",
+              "display": "Action"
+            }
+          ]
+        },
+        "manipulated": {
+          "reference": "Device/{{lastCreatedDeviceId}}",
+          "display": "MRI Scanner"
+        }
+      }
+    ],
+    "usedReference": [
+      {
+        "reference": "Device/{{lastCreatedDeviceId}}",
+        "display": "MRI Scanner - Philips 3T"
+      }
+    ],
+    "usedCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "113680003",
+            "display": "Magnetic resonance imaging unit"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Procedure created successfully");
+    console.log("Procedure ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Category:", res.body.category?.text || res.body.category?.coding?.[0]?.display);
+    console.log("Procedure:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Patient:", res.body.subject?.display);
+    console.log("Performed:", res.body.performedDateTime);
+    console.log("Location:", res.body.location?.display);
+    console.log("Outcome:", res.body.outcome?.text || res.body.outcome?.coding?.[0]?.display);
+    console.log("Performers:", res.body.performer?.length || 0);
+    console.log("Body Site:", res.body.bodySite?.[0]?.text || res.body.bodySite?.[0]?.coding?.[0]?.display);
+    
+    // Store the procedure ID for other requests
+    bru.setEnvVar("lastCreatedProcedureId", res.body.id);
+  } else {
+    console.log("❌ Failed to create procedure:", res.status, res.body);
+  }
+}

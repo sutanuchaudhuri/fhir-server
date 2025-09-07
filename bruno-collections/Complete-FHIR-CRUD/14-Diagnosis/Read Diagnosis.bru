@@ -1,0 +1,62 @@
+meta {
+  name: Read Diagnosis (Condition)
+  type: http
+  seq: 27
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition/{{lastCreatedConditionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Diagnosis (Condition) retrieved successfully");
+    console.log("Condition ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Clinical Status:", res.body.clinicalStatus?.coding?.[0]?.display);
+    console.log("Verification Status:", res.body.verificationStatus?.coding?.[0]?.display);
+    console.log("Category:", res.body.category?.[0]?.coding?.[0]?.display);
+    
+    console.log("\n🏥 Diagnosis Details:");
+    console.log("Condition:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Severity:", res.body.severity?.coding?.[0]?.display);
+    console.log("Patient:", res.body.subject?.reference);
+    console.log("Encounter:", res.body.encounter?.reference);
+    console.log("Onset:", res.body.onsetDateTime);
+    console.log("Recorded:", res.body.recordedDate);
+    console.log("Recorder:", res.body.recorder?.display);
+    
+    if (res.body.code?.coding) {
+      console.log("\n📋 Coding Systems:");
+      res.body.code.coding.forEach((coding, index) => {
+        console.log(`${index + 1}. ${coding.system}: ${coding.code} - ${coding.display}`);
+      });
+    }
+    
+    if (res.body.note && res.body.note.length > 0) {
+      console.log("\n📝 Clinical Notes:");
+      res.body.note.forEach((note, index) => {
+        console.log(`${index + 1}. ${note.text}`);
+      });
+    }
+    
+    if (res.body.stage && res.body.stage.length > 0) {
+      console.log("\n📊 Stage Information:");
+      res.body.stage.forEach((stage, index) => {
+        console.log(`${index + 1}. ${stage.summary?.coding?.[0]?.display}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve diagnosis:", res.status, res.body);
+  }
+}

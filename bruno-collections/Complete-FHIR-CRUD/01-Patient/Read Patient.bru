@@ -1,0 +1,34 @@
+meta {
+  name: Read Patient
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{lastCreatedPatientId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Patient retrieved successfully");
+    console.log("Patient ID:", res.body.id);
+    console.log("Name:", res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("Active:", res.body.active);
+    console.log("Gender:", res.body.gender);
+    console.log("Birth Date:", res.body.birthDate);
+  } else if (res.status === 404) {
+    console.log("❌ Patient not found - please create a patient first");
+  } else {
+    console.log("❌ Failed to retrieve patient:", res.status, res.body);
+  }
+}

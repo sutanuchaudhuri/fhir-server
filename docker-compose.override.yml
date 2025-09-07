@@ -1,0 +1,18 @@
+services:
+  fhir:
+    depends_on:
+      - mongo
+    environment:
+      # Override to use local MongoDB instead of Atlas
+      MONGO_URL: 'mongodb://mongo:27017/fhir'
+      AUDIT_EVENT_MONGO_URL: 'mongodb://mongo:27017/fhir'
+      MONGO_DB_NAME: fhir
+      AUDIT_EVENT_MONGO_DB_NAME: fhir
+      # Disable schema validation for debugging
+      VALIDATE_SCHEMA: '0'
+      # Increase logging for debugging
+      LOGLEVEL: 'ERROR'
+      # Disable access control temporarily for debugging
+      ENABLE_ACCESS_TAG_UPDATE: '0'
+      # Remove logging exclusions to see Patient logs
+      LOG_EXCLUDE_RESOURCES: ''

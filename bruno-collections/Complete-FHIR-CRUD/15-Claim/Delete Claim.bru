@@ -1,0 +1,33 @@
+meta {
+  name: Delete Claim
+  type: http
+  seq: 84
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Claim/{{lastCreatedClaimId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Claim deleted successfully");
+    console.log("Deleted Claim ID:", "{{lastCreatedClaimId}}");
+    console.log("Response status:", res.status);
+    
+    bru.setEnvVar("lastCreatedClaimId", "");
+  } else if (res.status === 404) {
+    console.log("⚠️  Claim not found (already deleted or never existed)");
+  } else {
+    console.log("❌ Failed to delete Claim:", res.status, res.body);
+  }
+}

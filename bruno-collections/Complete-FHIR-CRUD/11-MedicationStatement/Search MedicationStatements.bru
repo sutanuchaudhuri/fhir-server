@@ -1,0 +1,232 @@
+meta {
+  name: Search MedicationStatements
+  type: http
+  seq: 81
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationStatement?subject={{lastCreatedPatientId}}&status=active&_sort=-effective&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ MedicationStatement search completed successfully");
+    
+    // Display search parameters
+    console.log("\n🔍 Search Parameters:");
+    console.log("Patient ID:", "{{lastCreatedPatientId}}");
+    console.log("Status:", "active");
+    console.log("Sort Order:", "Most recent first");
+    console.log("Max Results:", "10");
+    
+    // Display bundle information
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    console.log("Bundle Type:", bundle.type);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 MedicationStatement Details:");
+      
+      bundle.entry.forEach((entry, index) => {
+        const statement = entry.resource;
+        console.log(`\n  --- MedicationStatement ${index + 1} ---`);
+        console.log(`  ID: ${statement.id}`);
+        console.log(`  Status: ${statement.status}`);
+        
+        // Display medication
+        if (statement.medicationCodeableConcept) {
+          console.log(`  Medication: ${statement.medicationCodeableConcept.coding?.[0]?.display || statement.medicationCodeableConcept.text || "Not specified"}`);
+          console.log(`  Code: ${statement.medicationCodeableConcept.coding?.[0]?.code || "Not specified"}`);
+        } else if (statement.medicationReference) {
+          console.log(`  Medication Reference: ${statement.medicationReference.reference}`);
+        } else {
+          console.log(`  Medication: Not specified`);
+        }
+        
+        // Display subject
+        console.log(`  Subject: ${statement.subject?.display || statement.subject?.reference || "Not specified"}`);
+        
+        // Display context
+        if (statement.context) {
+          console.log(`  Context: ${statement.context.display || statement.context.reference}`);
+        }
+        
+        // Display effective period
+        if (statement.effectiveDateTime) {
+          console.log(`  Effective Date: ${statement.effectiveDateTime}`);
+        } else if (statement.effectivePeriod) {
+          console.log(`  Effective Period: ${statement.effectivePeriod.start || "?"} to ${statement.effectivePeriod.end || "ongoing"}`);
+        } else {
+          console.log(`  Effective: Not specified`);
+        }
+        
+        // Display date asserted
+        console.log(`  Date Asserted: ${statement.dateAsserted || "Not specified"}`);
+        
+        // Display information source
+        if (statement.informationSource) {
+          console.log(`  Information Source: ${statement.informationSource.display || statement.informationSource.reference}`);
+        }
+        
+        // Display based on
+        if (statement.basedOn && statement.basedOn.length > 0) {
+          console.log(`  Based On: ${statement.basedOn.length} reference(s)`);
+          statement.basedOn.forEach((ref, refIndex) => {
+            console.log(`    ${refIndex + 1}. ${ref.display || ref.reference}`);
+          });
+        }
+        
+        // Display part of
+        if (statement.partOf && statement.partOf.length > 0) {
+          console.log(`  Part Of: ${statement.partOf.length} reference(s)`);
+        }
+        
+        // Display category
+        if (statement.category) {
+          console.log(`  Category: ${statement.category.coding?.[0]?.display || statement.category.text || "Not specified"}`);
+        }
+        
+        // Display dosage summary
+        if (statement.dosage && statement.dosage.length > 0) {
+          console.log(`  Dosage Instructions: ${statement.dosage.length}`);
+          const primaryDosage = statement.dosage[0];
+          console.log(`  Primary Dosage: ${primaryDosage.text || "Complex dosing"}`);
+          
+          if (primaryDosage.timing?.repeat) {
+            const repeat = primaryDosage.timing.repeat;
+            console.log(`  Frequency: ${repeat.frequency || "?"} times per ${repeat.period || "?"} ${repeat.periodUnit || ""}`);
+          }
+        } else {
+          console.log(`  Dosage Instructions: None`);
+        }
+        
+        // Display reason codes
+        if (statement.reasonCode && statement.reasonCode.length > 0) {
+          console.log(`  Reason Codes: ${statement.reasonCode.length}`);
+          statement.reasonCode.forEach((reason, reasonIndex) => {
+            console.log(`    ${reasonIndex + 1}. ${reason.coding?.[0]?.display || reason.text || "Not specified"}`);
+          });
+        }
+        
+        // Display reason references
+        if (statement.reasonReference && statement.reasonReference.length > 0) {
+          console.log(`  Reason References: ${statement.reasonReference.length}`);
+        }
+        
+        // Display notes
+        console.log(`  Notes: ${statement.note?.length || 0}`);
+        
+        console.log(`  Last Updated: ${statement.meta?.lastUpdated || "Not available"}`);
+      });
+      
+      // Display status breakdown
+      console.log("\n📈 Status Breakdown:");
+      const statuses = {};
+      bundle.entry.forEach(entry => {
+        const status = entry.resource.status || "unknown";
+        statuses[status] = (statuses[status] || 0) + 1;
+      });
+      Object.entries(statuses).forEach(([status, count]) => {
+        console.log(`  ${status}: ${count}`);
+      });
+      
+      // Display category breakdown
+      console.log("\n📊 Category Breakdown:");
+      const categories = {};
+      bundle.entry.forEach(entry => {
+        const category = entry.resource.category?.coding?.[0]?.display ||
+                        entry.resource.category?.text ||
+                        "Unspecified";
+        categories[category] = (categories[category] || 0) + 1;
+      });
+      Object.entries(categories).forEach(([category, count]) => {
+        console.log(`  ${category}: ${count}`);
+      });
+      
+      // Display medication breakdown
+      console.log("\n💊 Medication Breakdown:");
+      const medications = {};
+      bundle.entry.forEach(entry => {
+        let medication = "Unknown";
+        if (entry.resource.medicationCodeableConcept) {
+          medication = entry.resource.medicationCodeableConcept.coding?.[0]?.display ||
+                      entry.resource.medicationCodeableConcept.text ||
+                      "Coded medication";
+        } else if (entry.resource.medicationReference) {
+          medication = "Referenced medication";
+        }
+        medications[medication] = (medications[medication] || 0) + 1;
+      });
+      Object.entries(medications).forEach(([medication, count]) => {
+        console.log(`  ${medication}: ${count}`);
+      });
+      
+      // Display adherence and compliance statistics
+      console.log("\n📋 Documentation Statistics:");
+      let withContext = 0;
+      let withBasedOn = 0;
+      let withDosage = 0;
+      let withReason = 0;
+      let withNotes = 0;
+      let totalDosageInstructions = 0;
+      
+      bundle.entry.forEach(entry => {
+        if (entry.resource.context) withContext++;
+        if (entry.resource.basedOn && entry.resource.basedOn.length > 0) withBasedOn++;
+        if (entry.resource.dosage && entry.resource.dosage.length > 0) {
+          withDosage++;
+          totalDosageInstructions += entry.resource.dosage.length;
+        }
+        if ((entry.resource.reasonCode && entry.resource.reasonCode.length > 0) ||
+            (entry.resource.reasonReference && entry.resource.reasonReference.length > 0)) {
+          withReason++;
+        }
+        if (entry.resource.note && entry.resource.note.length > 0) withNotes++;
+      });
+      
+      console.log(`  Statements with Context: ${withContext}/${bundle.entry.length}`);
+      console.log(`  Statements Based On Orders: ${withBasedOn}/${bundle.entry.length}`);
+      console.log(`  Statements with Dosage: ${withDosage}/${bundle.entry.length}`);
+      console.log(`  Statements with Reason: ${withReason}/${bundle.entry.length}`);
+      console.log(`  Statements with Notes: ${withNotes}/${bundle.entry.length}`);
+      console.log(`  Total Dosage Instructions: ${totalDosageInstructions}`);
+      console.log(`  Average Dosage Instructions per Statement: ${(totalDosageInstructions / bundle.entry.length).toFixed(1)}`);
+      
+    } else {
+      console.log("\n📭 No MedicationStatements found for the specified criteria");
+      console.log("This could mean:");
+      console.log("• No medication statements for this patient");
+      console.log("• All statements have different status");
+      console.log("• Patient ID doesn't match any records");
+    }
+    
+    // Display navigation links
+    if (bundle.link && bundle.link.length > 0) {
+      console.log("\n🔗 Navigation Links:");
+      bundle.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📋 Search Summary:");
+    console.log("Search URL:", res.url);
+    console.log("Response Time:", res.responseTime ? `${res.responseTime}ms` : "Not available");
+    console.log("Total Found:", bundle.total || 0);
+    console.log("Showing:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to search MedicationStatements:", res.status, res.body);
+  }
+}

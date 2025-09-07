@@ -1,0 +1,38 @@
+meta {
+  name: Search Encounters
+  type: http
+  seq: 52
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Encounter?patient={{lastCreatedPatientId}}&_count=10&_sort=-date
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Encounter search completed successfully");
+    console.log("Total encounters found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("Encounters found:");
+      res.body.entry.forEach((entry, index) => {
+        const encounter = entry.resource;
+        console.log(`${index + 1}. ${encounter.type?.[0]?.coding?.[0]?.display || "Unknown Type"} - ${encounter.status} (${encounter.period?.start}) (ID: ${encounter.id})`);
+      });
+    } else {
+      console.log("No encounters found for this patient");
+    }
+  } else {
+    console.log("❌ Failed to search encounters:", res.status, res.body);
+  }
+}

@@ -1,0 +1,125 @@
+meta {
+  name: Read CareTeam
+  type: http
+  seq: 106
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/CareTeam/{{lastCreatedCareTeamId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const careTeam = res.body;
+    console.log("✅ CareTeam retrieved successfully");
+    console.log("CareTeam ID:", careTeam.id);
+    
+    console.log("\n📋 CareTeam Details:");
+    console.log("Status:", careTeam.status);
+    console.log("Name:", careTeam.name);
+    console.log("Subject:", careTeam.subject?.display);
+    console.log("Encounter:", careTeam.encounter?.display);
+    console.log("Period:", `${careTeam.period?.start || 'Not started'} to ${careTeam.period?.end || 'ongoing'}`);
+    
+    if (careTeam.identifier && careTeam.identifier.length > 0) {
+      console.log("\n🏷️ Identifiers:");
+      careTeam.identifier.forEach((id, index) => {
+        console.log(`  ${index + 1}. ${id.type?.coding?.[0]?.display || id.type?.text || 'Unknown Type'}: ${id.value}`);
+        console.log(`     System: ${id.system || 'Not specified'}`);
+      });
+    }
+    
+    if (careTeam.category && careTeam.category.length > 0) {
+      console.log("\n🏷️ Categories:");
+      careTeam.category.forEach((cat, index) => {
+        console.log(`  ${index + 1}. ${cat.coding?.[0]?.display || cat.text}`);
+      });
+    }
+    
+    if (careTeam.participant && careTeam.participant.length > 0) {
+      console.log("\n👥 Team Participants:");
+      careTeam.participant.forEach((participant, index) => {
+        console.log(`  ${index + 1}. ${participant.member?.display || 'Unknown Member'}`);
+        
+        if (participant.role && participant.role.length > 0) {
+          console.log(`     Roles: ${participant.role.map(r => r.coding?.[0]?.display || r.text).join(', ')}`);
+        }
+        
+        if (participant.onBehalfOf) {
+          console.log(`     On Behalf Of: ${participant.onBehalfOf.display}`);
+        }
+        
+        if (participant.period) {
+          console.log(`     Period: ${participant.period.start || 'Not started'} to ${participant.period.end || 'ongoing'}`);
+        }
+      });
+    }
+    
+    if (careTeam.reasonCode && careTeam.reasonCode.length > 0) {
+      console.log("\n🎯 Reason Codes:");
+      careTeam.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text}`);
+      });
+    }
+    
+    if (careTeam.reasonReference && careTeam.reasonReference.length > 0) {
+      console.log("\n🔗 Reason References:");
+      careTeam.reasonReference.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (careTeam.managingOrganization && careTeam.managingOrganization.length > 0) {
+      console.log("\n🏢 Managing Organizations:");
+      careTeam.managingOrganization.forEach((org, index) => {
+        console.log(`  ${index + 1}. ${org.display}`);
+      });
+    }
+    
+    if (careTeam.telecom && careTeam.telecom.length > 0) {
+      console.log("\n📞 Contact Information:");
+      careTeam.telecom.forEach((contact, index) => {
+        console.log(`  ${index + 1}. ${contact.system}: ${contact.value}`);
+        if (contact.use) console.log(`     Use: ${contact.use}`);
+        if (contact.period) {
+          console.log(`     Period: ${contact.period.start || 'Not started'} to ${contact.period.end || 'ongoing'}`);
+        }
+      });
+    }
+    
+    if (careTeam.note && careTeam.note.length > 0) {
+      console.log("\n📝 Notes:");
+      careTeam.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+        console.log(`     Time: ${note.time}`);
+        console.log(`     Author: ${note.authorString || note.authorReference?.display}`);
+      });
+    }
+    
+    console.log("\n📊 CareTeam Summary:");
+    console.log("Participants:", careTeam.participant?.length || 0);
+    console.log("Categories:", careTeam.category?.length || 0);
+    console.log("Managing Organizations:", careTeam.managingOrganization?.length || 0);
+    console.log("Contact Methods:", careTeam.telecom?.length || 0);
+    console.log("Created:", careTeam.meta?.lastUpdated || "Unknown");
+    console.log("Version:", careTeam.meta?.versionId || "1");
+    
+  } else if (res.status === 404) {
+    console.log("❌ CareTeam not found");
+    console.log("The CareTeam ID may be incorrect or the resource may have been deleted");
+    
+  } else {
+    console.log("❌ Failed to retrieve CareTeam:", res.status);
+    console.log("Response:", res.body);
+  }
+}

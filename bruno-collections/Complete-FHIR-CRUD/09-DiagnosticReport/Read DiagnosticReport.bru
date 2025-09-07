@@ -1,0 +1,78 @@
+meta {
+  name: Read DiagnosticReport
+  type: http
+  seq: 42
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/DiagnosticReport/{{lastCreatedDiagnosticReportId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ DiagnosticReport retrieved successfully");
+    console.log("DiagnosticReport ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Status:", res.body.status);
+    console.log("Category:", res.body.category?.[0]?.coding?.[0]?.display);
+    console.log("Code:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    
+    console.log("\n🏥 Report Details:");
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Encounter:", res.body.encounter?.display);
+    console.log("Effective DateTime:", res.body.effectiveDateTime);
+    console.log("Issued:", res.body.issued);
+    console.log("Conclusion:", res.body.conclusion || "No conclusion provided");
+    
+    if (res.body.performer && res.body.performer.length > 0) {
+      console.log("\n👨‍⚕️ Performers:");
+      res.body.performer.forEach((performer, index) => {
+        console.log(`${index + 1}. ${performer.display || performer.reference}`);
+      });
+    }
+    
+    if (res.body.result && res.body.result.length > 0) {
+      console.log("\n📊 Results:");
+      res.body.result.forEach((result, index) => {
+        console.log(`${index + 1}. ${result.display || result.reference}`);
+      });
+    }
+    
+    if (res.body.imagingStudy && res.body.imagingStudy.length > 0) {
+      console.log("\n📷 Imaging Studies:");
+      res.body.imagingStudy.forEach((study, index) => {
+        console.log(`${index + 1}. ${study.display || study.reference}`);
+      });
+    }
+    
+    if (res.body.media && res.body.media.length > 0) {
+      console.log("\n🖼️ Media:");
+      res.body.media.forEach((media, index) => {
+        console.log(`${index + 1}. Comment: ${media.comment || 'No comment'}`);
+        console.log(`   Link: ${media.link?.display || media.link?.reference}`);
+      });
+    }
+    
+    if (res.body.presentedForm && res.body.presentedForm.length > 0) {
+      console.log("\n📄 Presented Forms:");
+      res.body.presentedForm.forEach((form, index) => {
+        console.log(`${index + 1}. Content Type: ${form.contentType}`);
+        console.log(`   Language: ${form.language || 'Not specified'}`);
+        console.log(`   Title: ${form.title || 'No title'}`);
+        console.log(`   Size: ${form.size || 'Unknown'} bytes`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve diagnostic report:", res.status, res.body);
+  }
+}

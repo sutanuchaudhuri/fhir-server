@@ -1,0 +1,35 @@
+meta {
+  name: Read MedicationRequest
+  type: http
+  seq: 71
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationRequest/{{lastCreatedMedicationRequestId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ MedicationRequest retrieved successfully");
+    console.log("MedicationRequest ID:", res.body.id);
+    console.log("Medication:", res.body.medicationCodeableConcept?.coding?.[0]?.display);
+    console.log("Status:", res.body.status);
+    console.log("Intent:", res.body.intent);
+    console.log("Authored On:", res.body.authoredOn);
+    console.log("Requester:", res.body.requester?.display);
+  } else if (res.status === 404) {
+    console.log("❌ MedicationRequest not found - please create a medication request first");
+  } else {
+    console.log("❌ Failed to retrieve medication request:", res.status, res.body);
+  }
+}

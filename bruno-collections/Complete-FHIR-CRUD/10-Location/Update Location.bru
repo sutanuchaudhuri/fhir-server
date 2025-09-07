@@ -1,0 +1,230 @@
+meta {
+  name: Update Location
+  type: http
+  seq: 78
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Location/{{lastCreatedLocationId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Location",
+    "id": "{{lastCreatedLocationId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Location"]
+    },
+    "status": "active",
+    "name": "Updated Radiology Department - MRI Suite",
+    "alias": ["MRI Suite", "Advanced Imaging Center", "Radiology Unit B"],
+    "description": "Updated state-of-the-art MRI imaging suite with advanced 3T MRI scanner, patient preparation areas, and specialized radiology staff. Recently renovated with enhanced patient comfort features.",
+    "mode": "instance",
+    "type": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+        "code": "RADO",
+        "display": "Radiology unit"
+      }, {
+        "system": "http://snomed.info/sct",
+        "code": "225728007",
+        "display": "Accident and Emergency department"
+      }],
+      "text": "Radiology imaging department"
+    }],
+    "telecom": [{
+      "system": "phone",
+      "value": "+1-555-0123-4567",
+      "use": "work",
+      "rank": 1
+    }, {
+      "system": "fax",
+      "value": "+1-555-0123-4568",
+      "use": "work",
+      "rank": 2
+    }, {
+      "system": "email",
+      "value": "radiology.mri@hospital.example.com",
+      "use": "work",
+      "rank": 3
+    }],
+    "address": {
+      "use": "work",
+      "type": "both",
+      "text": "Building B, Level 2, MRI Suite 201, City General Hospital, 456 Healthcare Blvd, Medical City, CA 90210",
+      "line": [
+        "Building B, Level 2",
+        "MRI Suite 201",
+        "City General Hospital"
+      ],
+      "city": "Medical City",
+      "district": "Orange County",
+      "state": "CA",
+      "postalCode": "90210",
+      "country": "USA",
+      "period": {
+        "start": "2023-01-01"
+      }
+    },
+    "physicalType": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+        "code": "ro",
+        "display": "Room"
+      }],
+      "text": "MRI Scanner Room"
+    },
+    "position": {
+      "longitude": -118.2437,
+      "latitude": 34.0522,
+      "altitude": 91.44
+    },
+    "managingOrganization": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "City General Hospital - Radiology Department"
+    },
+    "hoursOfOperation": [{
+      "daysOfWeek": ["mon", "tue", "wed", "thu", "fri"],
+      "allDay": false,
+      "openingTime": "06:00:00",
+      "closingTime": "22:00:00"
+    }, {
+      "daysOfWeek": ["sat"],
+      "allDay": false,
+      "openingTime": "08:00:00",
+      "closingTime": "18:00:00"
+    }, {
+      "daysOfWeek": ["sun"],
+      "allDay": false,
+      "openingTime": "10:00:00",
+      "closingTime": "16:00:00"
+    }],
+    "availabilityExceptions": "Closed on federal holidays. Emergency scans available 24/7 through main hospital emergency services. Equipment maintenance every third Sunday 8:00-12:00.",
+    "endpoint": [{
+      "reference": "Endpoint/radiology-pacs-endpoint",
+      "display": "PACS Image Storage System"
+    }, {
+      "reference": "Endpoint/radiology-ris-endpoint", 
+      "display": "Radiology Information System"
+    }]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const location = res.body;
+    console.log("✅ Location updated successfully");
+    console.log("Location ID:", location.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated Location Details:");
+    console.log("Status:", location.status);
+    console.log("Name:", location.name);
+    console.log("Description:", location.description);
+    console.log("Mode:", location.mode);
+    
+    // Display aliases
+    if (location.alias && location.alias.length > 0) {
+      console.log("\n🏷️  Updated Aliases:");
+      location.alias.forEach((alias, index) => {
+        console.log(`  ${index + 1}. ${alias}`);
+      });
+    }
+    
+    // Display type
+    if (location.type && location.type.length > 0) {
+      console.log("\n🏢 Updated Type:");
+      location.type.forEach((type, index) => {
+        console.log(`  ${index + 1}. ${type.coding?.[0]?.display || type.text}`);
+      });
+    }
+    
+    // Display physical type
+    if (location.physicalType) {
+      console.log("\n🏠 Updated Physical Type:");
+      console.log("Type:", location.physicalType.coding?.[0]?.display || location.physicalType.text);
+    }
+    
+    // Display contact information
+    if (location.telecom && location.telecom.length > 0) {
+      console.log("\n📞 Updated Contact Information:");
+      location.telecom.forEach((telecom, index) => {
+        console.log(`  ${index + 1}. ${telecom.system}: ${telecom.value} (${telecom.use})`);
+      });
+    }
+    
+    // Display address
+    if (location.address) {
+      console.log("\n📍 Updated Address:");
+      console.log("Full Address:", location.address.text || "Not specified");
+      console.log("City:", location.address.city);
+      console.log("State:", location.address.state);
+      console.log("Postal Code:", location.address.postalCode);
+      console.log("Country:", location.address.country);
+    }
+    
+    // Display position
+    if (location.position) {
+      console.log("\n🗺️  Updated Geographic Position:");
+      console.log("Coordinates:", `${location.position.latitude}, ${location.position.longitude}`);
+      console.log("Altitude:", `${location.position.altitude}m`);
+    }
+    
+    // Display managing organization
+    if (location.managingOrganization) {
+      console.log("\n🏥 Managing Organization:");
+      console.log("Reference:", location.managingOrganization.reference);
+      console.log("Display:", location.managingOrganization.display);
+    }
+    
+    // Display hours of operation
+    if (location.hoursOfOperation && location.hoursOfOperation.length > 0) {
+      console.log("\n⏰ Updated Hours of Operation:");
+      location.hoursOfOperation.forEach((hours, index) => {
+        console.log(`  Schedule ${index + 1}: ${hours.daysOfWeek?.join(", ")}`);
+        if (hours.allDay) {
+          console.log(`    All Day`);
+        } else {
+          console.log(`    ${hours.openingTime} - ${hours.closingTime}`);
+        }
+      });
+    }
+    
+    // Display availability exceptions
+    if (location.availabilityExceptions) {
+      console.log("\n❗ Availability Exceptions:");
+      console.log(location.availabilityExceptions);
+    }
+    
+    // Display endpoints
+    if (location.endpoint && location.endpoint.length > 0) {
+      console.log("\n🔗 Updated Endpoints:");
+      location.endpoint.forEach((endpoint, index) => {
+        console.log(`  ${index + 1}. ${endpoint.display || endpoint.reference}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", location.meta?.versionId || "Unknown");
+    console.log("Last Updated:", location.meta?.lastUpdated || "Unknown");
+    console.log("Total Aliases:", location.alias?.length || 0);
+    console.log("Total Types:", location.type?.length || 0);
+    console.log("Contact Methods:", location.telecom?.length || 0);
+    console.log("Operating Schedules:", location.hoursOfOperation?.length || 0);
+    console.log("Endpoints:", location.endpoint?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Location:", res.status, res.body);
+  }
+}

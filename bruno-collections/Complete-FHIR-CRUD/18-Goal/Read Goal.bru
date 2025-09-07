@@ -1,0 +1,90 @@
+meta {
+  name: Read Goal
+  type: http
+  seq: 44
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Goal/{{lastCreatedGoalId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Goal retrieved successfully");
+    console.log("Goal ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Lifecycle Status:", res.body.lifecycleStatus);
+    console.log("Achievement Status:", res.body.achievementStatus?.coding?.[0]?.display);
+    console.log("Category:", res.body.category?.[0]?.coding?.[0]?.display);
+    console.log("Priority:", res.body.priority?.coding?.[0]?.display);
+    
+    console.log("\n🎯 Goal Details:");
+    console.log("Description:", res.body.description?.text);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Start Date:", res.body.startDate);
+    console.log("Status Date:", res.body.statusDate);
+    console.log("Status Reason:", res.body.statusReason || "No reason provided");
+    console.log("Expressed By:", res.body.expressedBy?.display);
+    
+    if (res.body.target && res.body.target.length > 0) {
+      console.log("\n📊 Targets:");
+      res.body.target.forEach((target, index) => {
+        console.log(`${index + 1}. Measure: ${target.measure?.coding?.[0]?.display}`);
+        
+        if (target.detailQuantity) {
+          console.log(`   Target Value: ${target.detailQuantity.value} ${target.detailQuantity.unit}`);
+        }
+        
+        if (target.detailRange) {
+          console.log(`   Target Range: ${target.detailRange.low?.value}-${target.detailRange.high?.value} ${target.detailRange.low?.unit}`);
+        }
+        
+        if (target.detailCodeableConcept) {
+          console.log(`   Target: ${target.detailCodeableConcept.text || target.detailCodeableConcept.coding?.[0]?.display}`);
+        }
+        
+        console.log(`   Due Date: ${target.dueDate || 'Not specified'}`);
+      });
+    }
+    
+    if (res.body.addresses && res.body.addresses.length > 0) {
+      console.log("\n🏥 Addresses:");
+      res.body.addresses.forEach((address, index) => {
+        console.log(`${index + 1}. ${address.display || address.reference}`);
+      });
+    }
+    
+    if (res.body.note && res.body.note.length > 0) {
+      console.log("\n📝 Notes:");
+      res.body.note.forEach((note, index) => {
+        console.log(`${index + 1}. ${note.text}`);
+      });
+    }
+    
+    if (res.body.outcomeCode && res.body.outcomeCode.length > 0) {
+      console.log("\n📈 Outcome Codes:");
+      res.body.outcomeCode.forEach((outcome, index) => {
+        console.log(`${index + 1}. ${outcome.text || outcome.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.outcomeReference && res.body.outcomeReference.length > 0) {
+      console.log("\n📊 Outcome References:");
+      res.body.outcomeReference.forEach((outcome, index) => {
+        console.log(`${index + 1}. ${outcome.display || outcome.reference}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve goal:", res.status, res.body);
+  }
+}

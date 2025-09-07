@@ -1,0 +1,53 @@
+meta {
+  name: Test Search Patients
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient?family=TestPatient&_count=10
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== SEARCH TEST ===");
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ SEARCH - Patient search successful");
+    console.log("Bundle Type:", res.body.resourceType);
+    console.log("Total Results:", res.body.total || 0);
+    console.log("Returned Entries:", res.body.entry?.length || 0);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("");
+      console.log("Found Patients:");
+      res.body.entry.forEach((entry, index) => {
+        const patient = entry.resource;
+        console.log(`  ${index + 1}. ${patient.name?.[0]?.given?.join(" ")} ${patient.name?.[0]?.family} (ID: ${patient.id})`);
+      });
+    }
+    
+    console.log("");
+    console.log("🔍 Search functionality working correctly");
+    
+  } else if (res.status === 401) {
+    console.log("❌ SEARCH - Authentication failed");
+    console.log("Run 'Get Auth Token' to refresh your token");
+    
+  } else {
+    console.log("❌ SEARCH - Failed:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("==================");
+}

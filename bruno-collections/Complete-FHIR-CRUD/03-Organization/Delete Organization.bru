@@ -1,0 +1,34 @@
+meta {
+  name: Delete Organization
+  type: http
+  seq: 58
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Organization/{{lastCreatedOrganizationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Organization deleted successfully");
+    console.log("Deleted Organization ID:", "{{lastCreatedOrganizationId}}");
+    console.log("Response status:", res.status);
+    
+    // Clear the environment variable
+    bru.setEnvVar("lastCreatedOrganizationId", "");
+  } else if (res.status === 404) {
+    console.log("⚠️  Organization not found (already deleted or never existed)");
+  } else {
+    console.log("❌ Failed to delete organization:", res.status, res.body);
+  }
+}

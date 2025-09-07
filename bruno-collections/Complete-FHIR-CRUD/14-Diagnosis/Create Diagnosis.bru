@@ -1,0 +1,158 @@
+meta {
+  name: Create Diagnosis (Condition)
+  type: http
+  seq: 26
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Condition",
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "active",
+          "display": "Active"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ]
+      }
+    ],
+    "severity": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "6736007",
+          "display": "Moderate"
+        }
+      ]
+    },
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "25064002",
+          "display": "Headache"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10",
+          "code": "R51",
+          "display": "Headache"
+        }
+      ],
+      "text": "Recurring headache"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Patient"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Current Encounter"
+    },
+    "onsetDateTime": "2024-01-15T08:30:00Z",
+    "recordedDate": "2024-01-15T09:00:00Z",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "asserter": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "stage": [
+      {
+        "summary": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "255604002",
+              "display": "Mild"
+            }
+          ]
+        },
+        "assessment": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}"
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "25064002",
+                "display": "Headache"
+              }
+            ]
+          }
+        ],
+        "detail": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}"
+          }
+        ]
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient reports recurring headaches for the past week. Pain is moderate, located in frontal region. Triggered by stress and lack of sleep."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Diagnosis (Condition) created successfully");
+    console.log("Condition ID:", res.body.id);
+    console.log("Clinical Status:", res.body.clinicalStatus?.coding?.[0]?.display);
+    console.log("Verification Status:", res.body.verificationStatus?.coding?.[0]?.display);
+    console.log("Diagnosis:", res.body.code?.text || res.body.code?.coding?.[0]?.display);
+    console.log("Severity:", res.body.severity?.coding?.[0]?.display);
+    console.log("Patient:", res.body.subject?.reference);
+    console.log("Onset:", res.body.onsetDateTime);
+    
+    // Store the condition ID for other requests
+    bru.setEnvVar("lastCreatedConditionId", res.body.id);
+  } else {
+    console.log("❌ Failed to create diagnosis:", res.status, res.body);
+  }
+}

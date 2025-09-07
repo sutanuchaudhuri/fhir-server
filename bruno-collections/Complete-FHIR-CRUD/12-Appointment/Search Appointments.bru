@@ -1,0 +1,38 @@
+meta {
+  name: Search Appointments
+  type: http
+  seq: 122
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Appointment?patient={{lastCreatedPatientId}}&date=ge2024-01-01&_count=10&_sort=date
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Appointment search completed successfully");
+    console.log("Total appointments found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("Appointments found:");
+      res.body.entry.forEach((entry, index) => {
+        const appt = entry.resource;
+        console.log(`${index + 1}. ${appt.serviceType?.[0]?.coding?.[0]?.display || "General"} - ${appt.status} (${appt.start}) (ID: ${appt.id})`);
+      });
+    } else {
+      console.log("No appointments found for this patient");
+    }
+  } else {
+    console.log("❌ Failed to search appointments:", res.status, res.body);
+  }
+}

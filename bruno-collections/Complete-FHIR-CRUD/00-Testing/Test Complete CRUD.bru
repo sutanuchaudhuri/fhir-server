@@ -1,0 +1,98 @@
+meta {
+  name: Test Complete CRUD
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "client"
+        }
+      ]
+    },
+    "active": true,
+    "name": [
+      {
+        "use": "official",
+        "family": "TestPatient",
+        "given": ["CRUD", "Test"]
+      }
+    ],
+    "gender": "unknown",
+    "birthDate": "1990-01-01"
+  }
+}
+
+script:post-response {
+  console.log("=== COMPLETE CRUD TEST ===");
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("✅ STEP 1: CREATE - Patient created successfully");
+    console.log("Patient ID:", res.body.id);
+    console.log("Name:", res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("Security Tags:", res.body.meta?.security?.length || 0, "tags present");
+    
+    // Store for subsequent operations
+    bru.setVar("testPatientId", res.body.id);
+    
+    console.log("");
+    console.log("🔄 Next Steps:");
+    console.log("1. Run 'Read Patient' with stored ID");
+    console.log("2. Run 'Update Patient' to modify data");
+    console.log("3. Run 'Delete Patient' to clean up");
+    
+  } else {
+    console.log("❌ STEP 1: CREATE - Failed:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    
+    if (res.status === 500) {
+      console.log("");
+      console.log("💡 Troubleshooting 500 Error:");
+      console.log("1. Verify FHIR server is running: docker-compose ps");
+      console.log("2. Check server logs: docker logs fhir-server-fhir-1");
+      console.log("3. Confirm security metadata is properly formatted");
+      console.log("4. Ensure all required tags are present:");
+      console.log("   - access, owner, sourceAssigningAuthority");
+    }
+    
+    if (res.status === 401) {
+      console.log("");
+      console.log("💡 Authentication Issue:");
+      console.log("1. Run 'Get Auth Token' first");
+      console.log("2. Verify token is stored in environment");
+      console.log("3. Check token expiration");
+    }
+  }
+  
+  console.log("");
+  console.log("=========================");
+}

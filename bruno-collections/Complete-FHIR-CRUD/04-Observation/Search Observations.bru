@@ -1,0 +1,43 @@
+meta {
+  name: Search Observations
+  type: http
+  seq: 42
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation?patient={{lastCreatedPatientId}}&category=vital-signs&_count=10&_sort=date
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Observation search completed successfully");
+    console.log("Total observations found:", res.body.total);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("Observations found:");
+      res.body.entry.forEach((entry, index) => {
+        const obs = entry.resource;
+        console.log(`${index + 1}. ${obs.code?.coding?.[0]?.display}: ${obs.valueQuantity?.value} ${obs.valueQuantity?.unit} (ID: ${obs.id})`);
+      });
+      
+      // Store the first observation ID for potential use
+      if (res.body.entry[0]) {
+        bru.setVar("searchedObservationId", res.body.entry[0].resource.id);
+      }
+    } else {
+      console.log("No observations found for this patient");
+    }
+  } else {
+    console.log("❌ Failed to search observations:", res.status, res.body);
+  }
+}

@@ -1,0 +1,116 @@
+meta {
+  name: Dev Environment - Test Search Resources
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient?family=DevTestPatient&_count=10
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== DEV ENVIRONMENT - SEARCH TEST ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🔍 Search Query: Patient?family=DevTestPatient&_count=10");
+  console.log("🏥 Server:", "{{baseUrl}}");
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ SEARCH SUCCESSFUL!");
+    console.log("");
+    console.log("📊 Search Results:");
+    console.log("  Bundle Type:", res.body.resourceType);
+    console.log("  Total Results:", res.body.total || 0);
+    console.log("  Returned Entries:", res.body.entry?.length || 0);
+    console.log("  Search Mode:", res.body.type || "Not specified");
+    console.log("");
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("👥 Found Patients:");
+      res.body.entry.forEach((entry, index) => {
+        const patient = entry.resource;
+        const fullName = `${patient.name?.[0]?.given?.join(" ")} ${patient.name?.[0]?.family}`;
+        const identifier = patient.identifier?.[0]?.value || "No ID";
+        
+        console.log(`  ${index + 1}. ${fullName}`);
+        console.log(`     ID: ${patient.id}`);
+        console.log(`     Identifier: ${identifier}`);
+        console.log(`     Gender: ${patient.gender || "Not specified"}`);
+        console.log(`     Birth Date: ${patient.birthDate || "Not specified"}`);
+        
+        // Check security metadata
+        const securityTags = patient.meta?.security || [];
+        const hasRequiredTags = securityTags.length >= 3;
+        console.log(`     Security Tags: ${securityTags.length} ${hasRequiredTags ? "✅" : "⚠️"}`);
+        console.log("");
+      });
+      
+      console.log("🎯 Search Functionality Validated!");
+      console.log("");
+      console.log("🔄 Additional Dev Environment Search Tests:");
+      console.log("  1. Search organizations: GET /Organization?name=Dev");
+      console.log("  2. Search by identifier: GET /Patient?identifier=DEV-TEST");
+      console.log("  3. Date range searches: GET /Patient?birthdate=ge1990-01-01");
+      console.log("  4. Combined searches: GET /Patient?gender=unknown&active=true");
+      
+    } else {
+      console.log("📭 No patients found matching search criteria");
+      console.log("");
+      console.log("💡 This could mean:");
+      console.log("  1. No dev test patients have been created yet");
+      console.log("  2. Search parameters don't match existing data");
+      console.log("  3. Run 'Dev Environment - Test Patient Creation' first");
+    }
+    
+    console.log("");
+    console.log("⏱️  Response Time:", res.responseTime, "ms");
+    
+    // Check for pagination links
+    if (res.body.link && res.body.link.length > 0) {
+      console.log("");
+      console.log("🔗 Pagination Links:");
+      res.body.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+  } else if (res.status === 401) {
+    console.log("❌ UNAUTHORIZED: Authentication failed");
+    console.log("🔧 Run 'Dev Environment - Get Auth Token' first");
+    
+  } else if (res.status === 400) {
+    console.log("❌ BAD REQUEST: Invalid search parameters");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Common Search Issues:");
+    console.log("  - Invalid parameter names");
+    console.log("  - Malformed parameter values");
+    console.log("  - Unsupported search modifiers");
+    
+  } else if (res.status === 500) {
+    console.log("❌ INTERNAL SERVER ERROR");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Server Issues:");
+    console.log("  - Database connectivity problems");
+    console.log("  - Search index issues");
+    console.log("  - Server configuration errors");
+    
+  } else {
+    console.log("❌ UNEXPECTED STATUS:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("=====================================");
+}

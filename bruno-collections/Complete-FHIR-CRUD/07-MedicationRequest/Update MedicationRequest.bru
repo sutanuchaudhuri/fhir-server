@@ -1,0 +1,276 @@
+meta {
+  name: Update MedicationRequest
+  type: http
+  seq: 71
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/MedicationRequest/{{lastCreatedMedicationRequestId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "MedicationRequest",
+    "id": "{{lastCreatedMedicationRequestId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/MedicationRequest"]
+    },
+    "status": "active",
+    "intent": "order",
+    "priority": "urgent",
+    "medicationCodeableConcept": {
+      "coding": [{
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "617993",
+        "display": "Lisinopril 10 MG Oral Tablet"
+      }],
+      "text": "Lisinopril 10mg tablets"
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Test Patient"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up visit"
+    },
+    "authoredOn": "{{$isoTimestamp}}",
+    "requester": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Smith"
+    },
+    "performer": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Smith"
+    },
+    "performerType": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "17561000",
+        "display": "Cardiologist"
+      }]
+    },
+    "reasonCode": [{
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "38341003",
+        "display": "Hypertensive disorder"
+      }],
+      "text": "Essential hypertension - blood pressure monitoring required"
+    }],
+    "note": [{
+      "text": "Updated prescription with increased monitoring frequency. Patient's blood pressure has been trending higher. Monitor for side effects including dry cough. Follow up in 2 weeks.",
+      "time": "{{$isoTimestamp}}"
+    }],
+    "dosageInstruction": [{
+      "sequence": 1,
+      "text": "Take 1 tablet by mouth once daily in the morning with food. Updated dosing schedule for better compliance.",
+      "additionalInstruction": [{
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "311504000",
+          "display": "With or after food"
+        }]
+      }],
+      "timing": {
+        "repeat": {
+          "frequency": 1,
+          "period": 1,
+          "periodUnit": "d",
+          "when": ["ACM"]
+        },
+        "code": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation",
+            "code": "QD",
+            "display": "Every day"
+          }]
+        }
+      },
+      "route": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "26643006",
+          "display": "Oral route"
+        }]
+      },
+      "method": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "421521009",
+          "display": "Swallow"
+        }]
+      },
+      "doseAndRate": [{
+        "type": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+            "code": "ordered",
+            "display": "Ordered"
+          }]
+        },
+        "doseQuantity": {
+          "value": 1,
+          "unit": "tablet",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        }
+      }]
+    }],
+    "dispenseRequest": {
+      "validityPeriod": {
+        "start": "{{$isoTimestamp}}",
+        "end": "2024-12-31"
+      },
+      "numberOfRepeatsAllowed": 5,
+      "quantity": {
+        "value": 90,
+        "unit": "tablet",
+        "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+        "code": "TAB"
+      },
+      "expectedSupplyDuration": {
+        "value": 90,
+        "unit": "d",
+        "system": "http://unitsofmeasure.org",
+        "code": "d"
+      },
+      "performer": {
+        "reference": "Organization/{{lastCreatedOrganizationId}}",
+        "display": "Main Street Pharmacy"
+      }
+    },
+    "substitution": {
+      "allowedBoolean": true,
+      "reason": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+          "code": "CT",
+          "display": "Continuing therapy"
+        }]
+      }
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const medicationRequest = res.body;
+    console.log("✅ MedicationRequest updated successfully");
+    console.log("MedicationRequest ID:", medicationRequest.id);
+    
+    // Display updated details
+    console.log("\n📋 Updated MedicationRequest Details:");
+    console.log("Status:", medicationRequest.status);
+    console.log("Intent:", medicationRequest.intent);
+    console.log("Priority:", medicationRequest.priority || "Not specified");
+    console.log("Subject:", medicationRequest.subject?.reference);
+    console.log("Requester:", medicationRequest.requester?.display || medicationRequest.requester?.reference);
+    console.log("Authored On:", medicationRequest.authoredOn);
+    
+    // Display medication
+    if (medicationRequest.medicationCodeableConcept) {
+      console.log("\n💊 Updated Medication:");
+      console.log("Medication:", medicationRequest.medicationCodeableConcept.coding?.[0]?.display || medicationRequest.medicationCodeableConcept.text);
+      console.log("Code:", medicationRequest.medicationCodeableConcept.coding?.[0]?.code);
+      console.log("System:", medicationRequest.medicationCodeableConcept.coding?.[0]?.system);
+    } else if (medicationRequest.medicationReference) {
+      console.log("\n💊 Medication Reference:", medicationRequest.medicationReference.reference);
+    }
+    
+    // Display reason
+    if (medicationRequest.reasonCode && medicationRequest.reasonCode.length > 0) {
+      console.log("\n💡 Updated Reason:");
+      medicationRequest.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text}`);
+      });
+    }
+    
+    // Display dosage instructions
+    if (medicationRequest.dosageInstruction && medicationRequest.dosageInstruction.length > 0) {
+      console.log("\n📝 Updated Dosage Instructions:");
+      medicationRequest.dosageInstruction.forEach((dosage, index) => {
+        console.log(`  Instruction ${index + 1}:`);
+        console.log(`    Text: ${dosage.text || "Not specified"}`);
+        console.log(`    Sequence: ${dosage.sequence || "Not specified"}`);
+        
+        if (dosage.timing?.repeat) {
+          const repeat = dosage.timing.repeat;
+          console.log(`    Frequency: ${repeat.frequency || "Not specified"} times per ${repeat.period || "Not specified"} ${repeat.periodUnit || ""}`);
+          if (repeat.when && repeat.when.length > 0) {
+            console.log(`    When: ${repeat.when.join(", ")}`);
+          }
+        }
+        
+        if (dosage.route) {
+          console.log(`    Route: ${dosage.route.coding?.[0]?.display || "Not specified"}`);
+        }
+        
+        if (dosage.doseAndRate && dosage.doseAndRate.length > 0) {
+          const dose = dosage.doseAndRate[0];
+          if (dose.doseQuantity) {
+            console.log(`    Dose: ${dose.doseQuantity.value} ${dose.doseQuantity.unit}`);
+          }
+        }
+      });
+    }
+    
+    // Display dispense request
+    if (medicationRequest.dispenseRequest) {
+      console.log("\n📦 Updated Dispense Request:");
+      const dispense = medicationRequest.dispenseRequest;
+      if (dispense.quantity) {
+        console.log(`  Quantity: ${dispense.quantity.value} ${dispense.quantity.unit}`);
+      }
+      console.log(`  Repeats Allowed: ${dispense.numberOfRepeatsAllowed || "Not specified"}`);
+      if (dispense.expectedSupplyDuration) {
+        console.log(`  Supply Duration: ${dispense.expectedSupplyDuration.value} ${dispense.expectedSupplyDuration.unit}`);
+      }
+      if (dispense.performer) {
+        console.log(`  Performer: ${dispense.performer.display || dispense.performer.reference}`);
+      }
+      if (dispense.validityPeriod) {
+        console.log(`  Valid From: ${dispense.validityPeriod.start || "Not specified"}`);
+        console.log(`  Valid Until: ${dispense.validityPeriod.end || "Not specified"}`);
+      }
+    }
+    
+    // Display substitution
+    if (medicationRequest.substitution) {
+      console.log("\n🔄 Substitution:");
+      console.log("Allowed:", medicationRequest.substitution.allowedBoolean ? "Yes" : "No");
+      if (medicationRequest.substitution.reason) {
+        console.log("Reason:", medicationRequest.substitution.reason.coding?.[0]?.display || "Not specified");
+      }
+    }
+    
+    // Display notes
+    if (medicationRequest.note && medicationRequest.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      medicationRequest.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("New Version:", medicationRequest.meta?.versionId || "Unknown");
+    console.log("Last Updated:", medicationRequest.meta?.lastUpdated || "Unknown");
+    console.log("Dosage Instructions:", medicationRequest.dosageInstruction?.length || 0);
+    console.log("Reason Codes:", medicationRequest.reasonCode?.length || 0);
+    console.log("Notes:", medicationRequest.note?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update MedicationRequest:", res.status, res.body);
+  }
+}

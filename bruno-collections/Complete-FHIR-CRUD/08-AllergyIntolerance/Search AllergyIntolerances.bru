@@ -1,0 +1,135 @@
+meta {
+  name: Search AllergyIntolerances
+  type: http
+  seq: 64
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/AllergyIntolerance?patient={{lastCreatedPatientId}}&clinical-status=active&_sort=-recorded-date&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ AllergyIntolerance search completed successfully");
+    
+    // Display search parameters
+    console.log("\n🔍 Search Parameters:");
+    console.log("Patient ID:", "{{lastCreatedPatientId}}");
+    console.log("Clinical Status:", "active");
+    console.log("Sort Order:", "Most recent first");
+    console.log("Max Results:", "10");
+    
+    // Display bundle information
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    console.log("Bundle Type:", bundle.type);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 AllergyIntolerance Details:");
+      
+      bundle.entry.forEach((entry, index) => {
+        const allergyIntolerance = entry.resource;
+        console.log(`\n  --- AllergyIntolerance ${index + 1} ---`);
+        console.log(`  ID: ${allergyIntolerance.id}`);
+        console.log(`  Clinical Status: ${allergyIntolerance.clinicalStatus?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`  Verification Status: ${allergyIntolerance.verificationStatus?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`  Type: ${allergyIntolerance.type || "Not specified"}`);
+        console.log(`  Category: ${allergyIntolerance.category?.join(", ") || "Not specified"}`);
+        console.log(`  Criticality: ${allergyIntolerance.criticality || "Not specified"}`);
+        
+        // Display substance
+        if (allergyIntolerance.code) {
+          console.log(`  Substance: ${allergyIntolerance.code.coding?.[0]?.display || allergyIntolerance.code.text || "Not specified"}`);
+        }
+        
+        // Display reaction summary
+        if (allergyIntolerance.reaction && allergyIntolerance.reaction.length > 0) {
+          console.log(`  Reactions: ${allergyIntolerance.reaction.length}`);
+          const severities = allergyIntolerance.reaction.map(r => r.severity).filter(s => s);
+          if (severities.length > 0) {
+            console.log(`  Severities: ${[...new Set(severities)].join(", ")}`);
+          }
+        } else {
+          console.log(`  Reactions: 0`);
+        }
+        
+        // Display timeline
+        console.log(`  Onset: ${allergyIntolerance.onsetDateTime || allergyIntolerance.onsetAge?.value + " " + (allergyIntolerance.onsetAge?.unit || "") || "Not specified"}`);
+        console.log(`  Last Occurrence: ${allergyIntolerance.lastOccurrence || "Not specified"}`);
+        console.log(`  Recorded: ${allergyIntolerance.recordedDate || "Not specified"}`);
+        console.log(`  Last Updated: ${allergyIntolerance.meta?.lastUpdated || "Not available"}`);
+      });
+      
+      // Display category breakdown
+      console.log("\n📊 Category Breakdown:");
+      const categories = {};
+      bundle.entry.forEach(entry => {
+        const cats = entry.resource.category || ["unspecified"];
+        cats.forEach(cat => {
+          categories[cat] = (categories[cat] || 0) + 1;
+        });
+      });
+      Object.entries(categories).forEach(([category, count]) => {
+        console.log(`  ${category}: ${count}`);
+      });
+      
+      // Display criticality breakdown
+      console.log("\n⚠️  Criticality Breakdown:");
+      const criticalities = {};
+      bundle.entry.forEach(entry => {
+        const crit = entry.resource.criticality || "unspecified";
+        criticalities[crit] = (criticalities[crit] || 0) + 1;
+      });
+      Object.entries(criticalities).forEach(([criticality, count]) => {
+        console.log(`  ${criticality}: ${count}`);
+      });
+      
+      // Display status breakdown
+      console.log("\n📈 Status Breakdown:");
+      const statuses = {};
+      bundle.entry.forEach(entry => {
+        const status = entry.resource.clinicalStatus?.coding?.[0]?.code || "unknown";
+        statuses[status] = (statuses[status] || 0) + 1;
+      });
+      Object.entries(statuses).forEach(([status, count]) => {
+        console.log(`  ${status}: ${count}`);
+      });
+      
+    } else {
+      console.log("\n📭 No AllergyIntolerances found for the specified criteria");
+      console.log("This could mean:");
+      console.log("• No allergies recorded for this patient");
+      console.log("• All allergies have different clinical status");
+      console.log("• Patient ID doesn't match any records");
+    }
+    
+    // Display navigation links
+    if (bundle.link && bundle.link.length > 0) {
+      console.log("\n🔗 Navigation Links:");
+      bundle.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📋 Search Summary:");
+    console.log("Search URL:", res.url);
+    console.log("Response Time:", res.responseTime ? `${res.responseTime}ms` : "Not available");
+    console.log("Total Found:", bundle.total || 0);
+    console.log("Showing:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to search AllergyIntolerances:", res.status, res.body);
+  }
+}

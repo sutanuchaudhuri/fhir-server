@@ -1,0 +1,222 @@
+meta {
+  name: Dev Environment - Test Patient Creation
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "client"
+        }
+      ]
+    },
+    "active": true,
+    "identifier": [
+      {
+        "use": "usual",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code": "MR",
+              "display": "Medical Record Number"
+            }
+          ]
+        },
+        "system": "https://www.icanbwell.com/patient",
+        "value": "DEV-TEST-{{$timestamp}}"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "DevTestPatient",
+        "given": ["Development", "Environment"],
+        "prefix": ["Mr."]
+      }
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "555-DEV-TEST",
+        "use": "mobile"
+      },
+      {
+        "system": "email",
+        "value": "dev.test@icanbwell.com",
+        "use": "home"
+      }
+    ],
+    "gender": "unknown",
+    "birthDate": "1990-01-01",
+    "address": [
+      {
+        "use": "home",
+        "type": "both",
+        "text": "Dev Test Address",
+        "line": ["123 Development Street"],
+        "city": "Test City",
+        "state": "TX",
+        "postalCode": "12345",
+        "country": "US"
+      }
+    ],
+    "contact": [
+      {
+        "relationship": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v2-0131",
+                "code": "E",
+                "display": "Emergency Contact"
+              }
+            ]
+          }
+        ],
+        "name": {
+          "family": "DevContact",
+          "given": ["Emergency"]
+        },
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "555-EMERGENCY"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  console.log("=== DEV ENVIRONMENT - PATIENT CREATION TEST ===");
+  console.log("");
+  console.log("🌍 Environment: Development");
+  console.log("🏥 Server:", "{{baseUrl}}");
+  console.log("📋 FHIR Version:", "{{fhirVersion}}");
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("✅ SUCCESS: Patient created in dev environment!");
+    console.log("");
+    console.log("📊 Response Details:");
+    console.log("  Patient ID:", res.body.id);
+    console.log("  Name:", res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("  Gender:", res.body.gender);
+    console.log("  Birth Date:", res.body.birthDate);
+    console.log("  Identifier:", res.body.identifier?.[0]?.value);
+    console.log("");
+    
+    // Verify security metadata
+    const securityTags = res.body.meta?.security || [];
+    console.log("🔒 Security Validation:");
+    console.log("  Total Security Tags:", securityTags.length);
+    
+    const hasAccess = securityTags.some(tag => tag.system?.includes('access'));
+    const hasOwner = securityTags.some(tag => tag.system?.includes('owner'));
+    const hasSourceAuth = securityTags.some(tag => tag.system?.includes('sourceAssigningAuthority'));
+    
+    console.log("  - Access tag:", hasAccess ? "✅ Present" : "❌ Missing");
+    console.log("  - Owner tag:", hasOwner ? "✅ Present" : "❌ Missing");
+    console.log("  - SourceAssigningAuthority tag:", hasSourceAuth ? "✅ Present" : "❌ Missing");
+    
+    if (hasAccess && hasOwner && hasSourceAuth) {
+      console.log("  🎉 All required security metadata validated!");
+    }
+    
+    console.log("");
+    console.log("📍 Location Header:", res.headers.location || "Not provided");
+    console.log("⏱️  Response Time:", res.responseTime, "ms");
+    console.log("");
+    
+    // Store for subsequent tests
+    bru.setVar("lastCreatedPatientId", res.body.id);
+    bru.setVar("devTestPatientId", res.body.id);
+    
+    console.log("💾 Patient ID stored for further testing");
+    console.log("🔄 Ready for additional dev environment tests:");
+    console.log("  1. Read the created patient");
+    console.log("  2. Update patient information");
+    console.log("  3. Search for dev test patients");
+    console.log("  4. Test other resource types");
+    
+  } else if (res.status === 400) {
+    console.log("❌ BAD REQUEST: Invalid resource data");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Common Issues:");
+    console.log("  - Check FHIR resource structure");
+    console.log("  - Verify required fields are present");
+    console.log("  - Ensure data types are correct");
+    
+  } else if (res.status === 401) {
+    console.log("❌ UNAUTHORIZED: Authentication failed");
+    console.log("Response:", res.body);
+    console.log("");
+    console.log("🔧 Solutions:");
+    console.log("  1. Run 'Get Auth Token' first");
+    console.log("  2. Verify Auth0 credentials in dev environment");
+    console.log("  3. Check token expiration");
+    console.log("  4. Confirm audience URL matches server");
+    
+  } else if (res.status === 403) {
+    console.log("❌ FORBIDDEN: Insufficient permissions");
+    console.log("Response:", res.body);
+    console.log("");
+    console.log("🔧 Check:");
+    console.log("  - Token scopes include patient write permissions");
+    console.log("  - Security metadata is properly formatted");
+    
+  } else if (res.status === 500) {
+    console.log("❌ INTERNAL SERVER ERROR: Server-side issue");
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("");
+    console.log("🔧 Troubleshooting:");
+    console.log("  1. Verify FHIR server is running: docker ps");
+    console.log("  2. Check server logs: docker logs fhir-server-fhir-1");
+    console.log("  3. Confirm MongoDB connection");
+    console.log("  4. Validate security metadata format");
+    console.log("");
+    console.log("📋 Required Security Tags:");
+    console.log("  - access: https://www.icanbwell.com/access");
+    console.log("  - owner: https://www.icanbwell.com/owner");
+    console.log("  - sourceAssigningAuthority: https://www.icanbwell.com/sourceAssigningAuthority");
+    
+  } else {
+    console.log("❌ UNEXPECTED STATUS:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+    console.log("Headers:", JSON.stringify(res.headers, null, 2));
+  }
+  
+  console.log("");
+  console.log("===============================================");
+}

@@ -1,0 +1,91 @@
+meta {
+  name: Test CRUD - Update
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{testPatientId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "id": "{{testPatientId}}",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "client"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "client"
+        }
+      ]
+    },
+    "active": true,
+    "name": [
+      {
+        "use": "official",
+        "family": "UpdatedTestPatient",
+        "given": ["CRUD", "Updated", "Test"]
+      }
+    ],
+    "gender": "unknown",
+    "birthDate": "1990-01-01",
+    "telecom": [
+      {
+        "system": "email",
+        "value": "updated.test@example.com",
+        "use": "home"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  console.log("=== CRUD TEST - UPDATE ===");
+  console.log("");
+  
+  if (res.status === 200) {
+    console.log("✅ STEP 3: UPDATE - Patient updated successfully");
+    console.log("Patient ID:", res.body.id);
+    console.log("Updated Name:", res.body.name?.[0]?.given?.join(" "), res.body.name?.[0]?.family);
+    console.log("Email Added:", res.body.telecom?.[0]?.value);
+    console.log("Security Tags:", res.body.meta?.security?.length || 0, "tags present");
+    
+    console.log("");
+    console.log("🔄 Ready for STEP 4: DELETE");
+    
+  } else if (res.status === 404) {
+    console.log("❌ STEP 3: UPDATE - Patient not found");
+    console.log("Make sure you ran the CREATE test first");
+    
+  } else if (res.status === 401) {
+    console.log("❌ STEP 3: UPDATE - Authentication failed");
+    console.log("Run 'Get Auth Token' to refresh your token");
+    
+  } else {
+    console.log("❌ STEP 3: UPDATE - Failed:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("========================");
+}

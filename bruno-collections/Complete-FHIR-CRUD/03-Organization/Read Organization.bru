@@ -1,0 +1,34 @@
+meta {
+  name: Read Organization
+  type: http
+  seq: 31
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Organization/{{lastCreatedOrganizationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Organization retrieved successfully");
+    console.log("Organization ID:", res.body.id);
+    console.log("Name:", res.body.name);
+    console.log("Type:", res.body.type?.[0]?.coding?.[0]?.display);
+    console.log("Active:", res.body.active);
+    console.log("Aliases:", res.body.alias?.join(", ") || "None");
+  } else if (res.status === 404) {
+    console.log("❌ Organization not found - please create an organization first");
+  } else {
+    console.log("❌ Failed to retrieve organization:", res.status, res.body);
+  }
+}

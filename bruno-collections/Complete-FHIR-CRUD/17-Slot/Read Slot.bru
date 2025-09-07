@@ -1,0 +1,55 @@
+meta {
+  name: Read Slot
+  type: http
+  seq: 40
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Slot/{{lastCreatedSlotId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Slot retrieved successfully");
+    console.log("Slot ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Status:", res.body.status);
+    console.log("Service Category:", res.body.serviceCategory?.[0]?.coding?.[0]?.display);
+    console.log("Service Type:", res.body.serviceType?.[0]?.coding?.[0]?.display);
+    console.log("Specialty:", res.body.specialty?.[0]?.coding?.[0]?.display);
+    console.log("Appointment Type:", res.body.appointmentType?.coding?.[0]?.display);
+    
+    console.log("\n⏰ Scheduling Details:");
+    console.log("Schedule Reference:", res.body.schedule?.display);
+    console.log("Start Time:", res.body.start);
+    console.log("End Time:", res.body.end);
+    
+    // Calculate duration
+    if (res.body.start && res.body.end) {
+      const duration = (new Date(res.body.end) - new Date(res.body.start)) / (1000 * 60);
+      console.log("Duration:", duration, "minutes");
+    }
+    
+    console.log("Overbooked:", res.body.overbooked);
+    console.log("Comment:", res.body.comment || "No comment");
+    
+    if (res.body.identifier && res.body.identifier.length > 0) {
+      console.log("\n🆔 Identifiers:");
+      res.body.identifier.forEach((id, index) => {
+        console.log(`${index + 1}. ${id.system}: ${id.value}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve slot:", res.status, res.body);
+  }
+}

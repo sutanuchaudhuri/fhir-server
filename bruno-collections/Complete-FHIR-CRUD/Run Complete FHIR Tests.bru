@@ -1,0 +1,94 @@
+meta {
+  name: Run Complete FHIR Tests
+  type: http
+  seq: 999
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/metadata
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== COMPLETE FHIR CRUD OPERATIONS TEST SUITE ===");
+  console.log("");
+  console.log("🏥 FHIR Server Status:", res.status === 200 ? "✅ Online" : "❌ Offline");
+  
+  if (res.status === 200) {
+    console.log("📊 Server Information:");
+    console.log("   • FHIR Version:", res.body.fhirVersion);
+    console.log("   • Server Software:", res.body.software?.name || "Unknown");
+    console.log("   • Implementation URL:", res.body.implementation?.url || "Not specified");
+    console.log("");
+    
+    if (res.body.rest && res.body.rest[0] && res.body.rest[0].resource) {
+      const resources = res.body.rest[0].resource.map(r => r.type).sort();
+      console.log("🔗 Supported Resources (" + resources.length + "):");
+      console.log("   " + resources.join(", "));
+    }
+    
+    console.log("");
+    console.log("📋 TEST EXECUTION PLAN:");
+    console.log("");
+    console.log("🔐 Phase 1: Authentication");
+    console.log("   1. Get Auth Token (OAuth 2.0 Client Credentials)");
+    console.log("   2. Get Server Metadata (Capability Statement)");
+    console.log("");
+    
+    console.log("👥 Phase 2: Core Administrative Resources");
+    console.log("   3. Patient CRUD (Create → Read → Update → Search → Delete)");
+    console.log("   4. Practitioner CRUD (Create → Read → Search → Delete)");
+    console.log("   5. Organization CRUD (Create → Read → Search → Delete)");
+    console.log("   6. Location CRUD (Create → Read → Search → Delete)");
+    console.log("");
+    
+    console.log("🏥 Phase 3: Clinical Workflow Resources");
+    console.log("   7. Encounter CRUD (Create → Read → Search → Delete)");
+    console.log("   8. Condition CRUD (Create → Read → Search → Delete)");
+    console.log("   9. Observation CRUD (Create → Read → Search → Delete)");
+    console.log("   10. DiagnosticReport CRUD (Create → Read → Search → Delete)");
+    console.log("");
+    
+    console.log("💊 Phase 4: Medication & Treatment Resources");
+    console.log("   11. MedicationRequest CRUD (Create → Read → Search → Delete)");
+    console.log("   12. AllergyIntolerance CRUD (Create → Read → Search → Delete)");
+    console.log("");
+    
+    console.log("🚀 EXECUTION INSTRUCTIONS:");
+    console.log("   1. First run: 'Get Auth Token' to authenticate");
+    console.log("   2. Recommended order: Follow the numeric sequence");
+    console.log("   3. Dependencies: Some resources reference others (Patient → Encounter → Condition)");
+    console.log("   4. Cleanup: Delete operations clear stored IDs");
+    console.log("");
+    
+    console.log("📊 COVERAGE ANALYSIS:");
+    console.log("   • Administrative: Patient, Practitioner, Organization, Location");
+    console.log("   • Clinical: Encounter, Condition, Observation, DiagnosticReport");
+    console.log("   • Medication: MedicationRequest, AllergyIntolerance");
+    console.log("   • Operations: Create, Read, Update, Search, Delete");
+    console.log("   • Authentication: OAuth 2.0 with Auth0");
+    console.log("");
+    
+    console.log("⚠️  IMPORTANT NOTES:");
+    console.log("   • Update Auth0 credentials in environment for real testing");
+    console.log("   • Some operations depend on previously created resources");
+    console.log("   • Check console logs for detailed operation results");
+    console.log("   • Resource IDs are automatically stored and reused");
+    
+  } else {
+    console.log("❌ Server unavailable - check connection and authentication");
+  }
+  
+  console.log("");
+  console.log("🎯 Ready to execute comprehensive FHIR R4 testing!");
+}

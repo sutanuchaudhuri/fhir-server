@@ -1,0 +1,187 @@
+meta {
+  name: Search Procedures
+  type: http
+  seq: 69
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Procedure?patient={{lastCreatedPatientId}}&status=completed&_sort=-performed-date&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Procedure search completed successfully");
+    
+    // Display search parameters
+    console.log("\n🔍 Search Parameters:");
+    console.log("Patient ID:", "{{lastCreatedPatientId}}");
+    console.log("Status:", "completed");
+    console.log("Sort Order:", "Most recent first");
+    console.log("Max Results:", "10");
+    
+    // Display bundle information
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    console.log("Bundle Type:", bundle.type);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Procedure Details:");
+      
+      bundle.entry.forEach((entry, index) => {
+        const procedure = entry.resource;
+        console.log(`\n  --- Procedure ${index + 1} ---`);
+        console.log(`  ID: ${procedure.id}`);
+        console.log(`  Status: ${procedure.status}`);
+        console.log(`  Category: ${procedure.category?.coding?.[0]?.display || procedure.category?.text || "Not specified"}`);
+        console.log(`  Code: ${procedure.code?.coding?.[0]?.display || procedure.code?.text || "Not specified"}`);
+        
+        // Display timing
+        const performedDate = procedure.performedDateTime || 
+                             procedure.performedPeriod?.start || 
+                             "Not specified";
+        console.log(`  Performed: ${performedDate}`);
+        
+        // Display performer
+        if (procedure.performer && procedure.performer.length > 0) {
+          const mainPerformer = procedure.performer[0];
+          console.log(`  Primary Performer: ${mainPerformer.actor?.display || mainPerformer.actor?.reference || "Not specified"}`);
+          if (mainPerformer.function) {
+            console.log(`  Performer Role: ${mainPerformer.function.coding?.[0]?.display || "Not specified"}`);
+          }
+        } else {
+          console.log(`  Performer: Not specified`);
+        }
+        
+        // Display location
+        console.log(`  Location: ${procedure.location?.display || procedure.location?.reference || "Not specified"}`);
+        
+        // Display body site
+        if (procedure.bodySite && procedure.bodySite.length > 0) {
+          const bodySites = procedure.bodySite.map(site => 
+            site.coding?.[0]?.display || site.text || "Unknown"
+          ).join(", ");
+          console.log(`  Body Site(s): ${bodySites}`);
+        } else {
+          console.log(`  Body Site: Not specified`);
+        }
+        
+        // Display outcome
+        console.log(`  Outcome: ${procedure.outcome?.coding?.[0]?.display || procedure.outcome?.text || "Not specified"}`);
+        
+        // Display complications
+        if (procedure.complication && procedure.complication.length > 0) {
+          console.log(`  Complications: ${procedure.complication.length}`);
+        } else {
+          console.log(`  Complications: None reported`);
+        }
+        
+        // Display notes count
+        console.log(`  Notes: ${procedure.note?.length || 0}`);
+        console.log(`  Last Updated: ${procedure.meta?.lastUpdated || "Not available"}`);
+      });
+      
+      // Display category breakdown
+      console.log("\n📊 Category Breakdown:");
+      const categories = {};
+      bundle.entry.forEach(entry => {
+        const category = entry.resource.category?.coding?.[0]?.display || 
+                        entry.resource.category?.text || 
+                        "Unspecified";
+        categories[category] = (categories[category] || 0) + 1;
+      });
+      Object.entries(categories).forEach(([category, count]) => {
+        console.log(`  ${category}: ${count}`);
+      });
+      
+      // Display status breakdown
+      console.log("\n📈 Status Breakdown:");
+      const statuses = {};
+      bundle.entry.forEach(entry => {
+        const status = entry.resource.status || "unknown";
+        statuses[status] = (statuses[status] || 0) + 1;
+      });
+      Object.entries(statuses).forEach(([status, count]) => {
+        console.log(`  ${status}: ${count}`);
+      });
+      
+      // Display body site breakdown
+      console.log("\n🎯 Body Site Breakdown:");
+      const bodySites = {};
+      bundle.entry.forEach(entry => {
+        if (entry.resource.bodySite && entry.resource.bodySite.length > 0) {
+          entry.resource.bodySite.forEach(site => {
+            const siteName = site.coding?.[0]?.display || site.text || "Unspecified";
+            bodySites[siteName] = (bodySites[siteName] || 0) + 1;
+          });
+        } else {
+          bodySites["Not specified"] = (bodySites["Not specified"] || 0) + 1;
+        }
+      });
+      Object.entries(bodySites).forEach(([site, count]) => {
+        console.log(`  ${site}: ${count}`);
+      });
+      
+      // Display outcome breakdown
+      console.log("\n📊 Outcome Breakdown:");
+      const outcomes = {};
+      bundle.entry.forEach(entry => {
+        const outcome = entry.resource.outcome?.coding?.[0]?.display || 
+                       entry.resource.outcome?.text || 
+                       "Not specified";
+        outcomes[outcome] = (outcomes[outcome] || 0) + 1;
+      });
+      Object.entries(outcomes).forEach(([outcome, count]) => {
+        console.log(`  ${outcome}: ${count}`);
+      });
+      
+      // Display complication statistics
+      console.log("\n⚠️  Complication Statistics:");
+      let withComplications = 0;
+      let totalComplications = 0;
+      bundle.entry.forEach(entry => {
+        if (entry.resource.complication && entry.resource.complication.length > 0) {
+          withComplications++;
+          totalComplications += entry.resource.complication.length;
+        }
+      });
+      console.log(`  Procedures with complications: ${withComplications}/${bundle.entry.length}`);
+      console.log(`  Total complications reported: ${totalComplications}`);
+      
+    } else {
+      console.log("\n📭 No Procedures found for the specified criteria");
+      console.log("This could mean:");
+      console.log("• No procedures recorded for this patient");
+      console.log("• All procedures have different status");
+      console.log("• Patient ID doesn't match any records");
+    }
+    
+    // Display navigation links
+    if (bundle.link && bundle.link.length > 0) {
+      console.log("\n🔗 Navigation Links:");
+      bundle.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📋 Search Summary:");
+    console.log("Search URL:", res.url);
+    console.log("Response Time:", res.responseTime ? `${res.responseTime}ms` : "Not available");
+    console.log("Total Found:", bundle.total || 0);
+    console.log("Showing:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to search Procedures:", res.status, res.body);
+  }
+}

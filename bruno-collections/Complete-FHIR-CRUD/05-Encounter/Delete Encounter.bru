@@ -1,0 +1,33 @@
+meta {
+  name: Delete Encounter
+  type: http
+  seq: 86
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Encounter/{{lastCreatedEncounterId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ Encounter deleted successfully");
+    console.log("Deleted Encounter ID:", "{{lastCreatedEncounterId}}");
+    console.log("Response status:", res.status);
+    
+    bru.setEnvVar("lastCreatedEncounterId", "");
+  } else if (res.status === 404) {
+    console.log("⚠️  Encounter not found (already deleted or never existed)");
+  } else {
+    console.log("❌ Failed to delete Encounter:", res.status, res.body);
+  }
+}

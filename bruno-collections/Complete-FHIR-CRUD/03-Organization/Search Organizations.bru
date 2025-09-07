@@ -1,0 +1,79 @@
+meta {
+  name: Search Organizations
+  type: http
+  seq: 57
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Organization?active=true&type=prov&_count=20&_sort=name
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Organization search successful");
+    console.log("Bundle type:", res.body.type);
+    console.log("Total organizations found:", res.body.total);
+    console.log("Organizations returned:", res.body.entry?.length || 0);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("\n🏥 Found Organizations:");
+      res.body.entry.forEach((entry, index) => {
+        const org = entry.resource;
+        console.log(`${index + 1}. ${org.name} (ID: ${org.id})`);
+        console.log(`   Active: ${org.active}`);
+        console.log(`   Type: ${org.type?.[0]?.coding?.[0]?.display || 'Not specified'}`);
+        
+        if (org.alias && org.alias.length > 0) {
+          console.log(`   Aliases: ${org.alias.join(', ')}`);
+        }
+        
+        if (org.address && org.address.length > 0) {
+          const addr = org.address[0];
+          console.log(`   Address: ${addr.line?.join(' ')}, ${addr.city}, ${addr.state} ${addr.postalCode}`);
+        }
+        
+        if (org.telecom && org.telecom.length > 0) {
+          const phone = org.telecom.find(t => t.system === 'phone');
+          if (phone) {
+            console.log(`   Phone: ${phone.value}`);
+          }
+        }
+        
+        if (org.partOf) {
+          console.log(`   Part of: ${org.partOf.display || org.partOf.reference}`);
+        }
+        
+        console.log("");
+      });
+      
+      // Count by type
+      const typeCounts = res.body.entry.reduce((acc, entry) => {
+        const type = entry.resource.type?.[0]?.coding?.[0]?.display || 'Unspecified';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("📊 Organization Type Summary:");
+      Object.entries(typeCounts).forEach(([type, count]) => {
+        console.log(`   ${type}: ${count}`);
+      });
+    }
+    
+    // Store first organization ID for other tests
+    if (res.body.entry && res.body.entry.length > 0) {
+      bru.setEnvVar("searchedOrganizationId", res.body.entry[0].resource.id);
+    }
+  } else {
+    console.log("❌ Failed to search organizations:", res.status, res.body);
+  }
+}

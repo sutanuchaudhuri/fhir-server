@@ -1,0 +1,345 @@
+meta {
+  name: Update Task
+  type: http
+  seq: 99
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Task/{{lastCreatedTaskId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Task",
+    "id": "{{lastCreatedTaskId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Task"]
+    },
+    "status": "in-progress",
+    "intent": "order",
+    "priority": "routine",
+    "code": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/CodeSystem/task-code",
+          "code": "fulfill",
+          "display": "Fulfill the focal request"
+        }
+      ],
+      "text": "Complete Patient Follow-up Assessment - Updated"
+    },
+    "description": "Updated Task: Conduct comprehensive follow-up assessment for patient with hypertension. Review medication compliance, check vital signs, assess for side effects, and update treatment plan as needed. Priority increased due to recent blood pressure readings.",
+    "focus": {
+      "reference": "ServiceRequest/follow-up-assessment-001",
+      "display": "Follow-up Assessment Service Request"
+    },
+    "for": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "executionPeriod": {
+      "start": "{{$isoTimestamp}}",
+      "end": "2024-12-31T17:00:00Z"
+    },
+    "authoredOn": "{{$isoTimestamp}}",
+    "lastModified": "{{$isoTimestamp}}",
+    "requester": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "performerType": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "158965000",
+            "display": "Medical practitioner"
+          }
+        ],
+        "text": "Primary Care Physician"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "106292003",
+            "display": "Professional nurse"
+          }
+        ],
+        "text": "Registered Nurse - Updated Role"
+      }
+    ],
+    "owner": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "38341003",
+            "display": "Hypertensive disorder"
+          }
+        ],
+        "text": "Follow-up for essential hypertension management"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "182840001",
+            "display": "Drug treatment review"
+          }
+        ],
+        "text": "Medication compliance assessment - Updated"
+      }
+    ],
+    "reasonReference": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Essential Hypertension"
+      },
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}",
+        "display": "Recent Blood Pressure Reading"
+      }
+    ],
+    "note": [
+      {
+        "authorReference": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "time": "{{$isoTimestamp}}",
+        "text": "Updated task priority due to elevated BP readings at last visit. Patient reports good medication compliance but experiencing occasional morning headaches. Need to assess current medication effectiveness and consider dose adjustment. Also review lifestyle modifications and home BP monitoring compliance."
+      },
+      {
+        "authorReference": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        },
+        "time": "{{$isoTimestamp}}",
+        "text": "Progress update: Task partially completed. Vital signs obtained and documented. Patient interview completed regarding medication compliance and side effects. Still pending: medication review with pharmacy consultation and care plan update."
+      }
+    ],
+    "relevantHistory": [
+      {
+        "reference": "Provenance/task-history-001",
+        "display": "Task Creation History"
+      }
+    ],
+    "restriction": {
+      "repetitions": 1,
+      "period": {
+        "start": "{{$isoTimestamp}}",
+        "end": "2024-12-31T17:00:00Z"
+      },
+      "recipient": [
+        {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        }
+      ]
+    },
+    "input": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/task-input-type",
+              "code": "reference",
+              "display": "Reference"
+            }
+          ],
+          "text": "Patient Reference"
+        },
+        "valueReference": {
+          "reference": "Patient/{{lastCreatedPatientId}}",
+          "display": "John Doe"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/task-input-type",
+              "code": "string",
+              "display": "String"
+            }
+          ],
+          "text": "Assessment Type"
+        },
+        "valueString": "Comprehensive Follow-up Assessment - Updated"
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/task-input-type",
+              "code": "boolean",
+              "display": "Boolean"
+            }
+          ],
+          "text": "Urgent Assessment Required"
+        },
+        "valueBoolean": true
+      }
+    ],
+    "output": [
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/task-output-type",
+              "code": "reference",
+              "display": "Reference"
+            }
+          ],
+          "text": "Assessment Results"
+        },
+        "valueReference": {
+          "reference": "Observation/{{lastCreatedObservationId}}",
+          "display": "Updated Blood Pressure Reading"
+        }
+      },
+      {
+        "type": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/task-output-type",
+              "code": "string",
+              "display": "String"
+            }
+          ],
+          "text": "Clinical Summary"
+        },
+        "valueString": "Patient shows good medication compliance. BP slightly elevated but improved from previous reading. Recommend continuing current therapy with lifestyle modifications. Next follow-up in 4 weeks."
+      }
+    ],
+    "businessStatus": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/task-business-status",
+          "code": "waiting",
+          "display": "Waiting on additional information"
+        }
+      ],
+      "text": "Awaiting pharmacy consultation results - Updated"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const task = res.body;
+    console.log("✅ Task updated successfully");
+    console.log("Task ID:", task.id);
+    
+    console.log("\n📋 Updated Task Details:");
+    console.log("Status:", task.status);
+    console.log("Intent:", task.intent);
+    console.log("Priority:", task.priority);
+    console.log("Code:", task.code?.coding?.[0]?.display);
+    console.log("Description:", task.description?.substring(0, 100) + (task.description?.length > 100 ? "..." : ""));
+    console.log("For:", task.for?.display);
+    console.log("Focus:", task.focus?.display);
+    console.log("Encounter:", task.encounter?.display);
+    console.log("Authored On:", task.authoredOn);
+    console.log("Last Modified:", task.lastModified);
+    console.log("Requester:", task.requester?.display);
+    console.log("Owner:", task.owner?.display);
+    console.log("Business Status:", task.businessStatus?.coding?.[0]?.display);
+    
+    if (task.executionPeriod) {
+      console.log("\n⏰ Execution Period:");
+      console.log("Start:", task.executionPeriod.start);
+      console.log("End:", task.executionPeriod.end);
+    }
+    
+    if (task.performerType && task.performerType.length > 0) {
+      console.log("\n👥 Updated Performer Types:");
+      task.performerType.forEach((type, index) => {
+        console.log(`  ${index + 1}. ${type.coding?.[0]?.display} - ${type.text}`);
+      });
+    }
+    
+    if (task.reasonCode && task.reasonCode.length > 0) {
+      console.log("\n🎯 Updated Reason Codes:");
+      task.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display} - ${reason.text}`);
+      });
+    }
+    
+    if (task.reasonReference && task.reasonReference.length > 0) {
+      console.log("\n🔗 Updated Reason References:");
+      task.reasonReference.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (task.note && task.note.length > 0) {
+      console.log("\n📝 Updated Notes:");
+      task.note.forEach((note, index) => {
+        console.log(`  Note ${index + 1} (${note.time}):`);
+        console.log(`    Author: ${note.authorReference?.display || note.authorString}`);
+        console.log(`    Text: ${note.text.substring(0, 100)}${note.text.length > 100 ? '...' : ''}`);
+      });
+    }
+    
+    if (task.input && task.input.length > 0) {
+      console.log("\n📥 Updated Input Parameters:");
+      task.input.forEach((input, index) => {
+        console.log(`  ${index + 1}. Type: ${input.type?.text}`);
+        if (input.valueString) console.log(`     Value: ${input.valueString}`);
+        if (input.valueBoolean !== undefined) console.log(`     Value: ${input.valueBoolean}`);
+        if (input.valueReference) console.log(`     Reference: ${input.valueReference.display}`);
+      });
+    }
+    
+    if (task.output && task.output.length > 0) {
+      console.log("\n📤 Updated Output Results:");
+      task.output.forEach((output, index) => {
+        console.log(`  ${index + 1}. Type: ${output.type?.text}`);
+        if (output.valueString) console.log(`     Value: ${output.valueString.substring(0, 50)}${output.valueString.length > 50 ? '...' : ''}`);
+        if (output.valueReference) console.log(`     Reference: ${output.valueReference.display}`);
+      });
+    }
+    
+    if (task.restriction) {
+      console.log("\n🔒 Task Restrictions:");
+      console.log("Repetitions:", task.restriction.repetitions);
+      console.log("Period:", `${task.restriction.period?.start} to ${task.restriction.period?.end}`);
+      if (task.restriction.recipient) {
+        console.log("Recipients:", task.restriction.recipient.map(r => r.display).join(', '));
+      }
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("Version:", task.meta?.versionId || "Unknown");
+    console.log("Last Updated:", task.meta?.lastUpdated || "Unknown");
+    console.log("Notes:", task.note?.length || 0);
+    console.log("Input Parameters:", task.input?.length || 0);
+    console.log("Output Results:", task.output?.length || 0);
+    console.log("Reason Codes:", task.reasonCode?.length || 0);
+    console.log("Performer Types:", task.performerType?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Task:", res.status, res.body);
+  }
+}

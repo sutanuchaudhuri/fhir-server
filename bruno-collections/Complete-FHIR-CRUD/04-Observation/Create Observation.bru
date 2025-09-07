@@ -1,0 +1,115 @@
+meta {
+  name: Create Observation
+  type: http
+  seq: 40
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Observation
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Observation",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "Vital Signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "72514-3",
+          "display": "Pain severity - 0-10 verbal numeric rating [Score] - Reported"
+        }
+      ]
+    },
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "Patient"
+    },
+    "performer": [
+      {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Smith"
+      }
+    ],
+    "effectiveDateTime": "2024-01-15T14:30:00Z",
+    "valueQuantity": {
+      "value": 3,
+      "unit": "{score}",
+      "system": "http://unitsofmeasure.org",
+      "code": "{score}"
+    },
+    "component": [
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8867-4",
+              "display": "Heart rate"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 75,
+          "unit": "beats/min",
+          "system": "http://unitsofmeasure.org",
+          "code": "/min"
+        }
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8480-6",
+              "display": "Systolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 120,
+          "unit": "mmHg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        }
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Observation created successfully");
+    console.log("Observation ID:", res.body.id);
+    console.log("Code:", res.body.code?.coding?.[0]?.display);
+    console.log("Status:", res.body.status);
+    console.log("Value:", res.body.valueQuantity?.value, res.body.valueQuantity?.unit);
+    
+    // Store the observation ID for use in other requests
+    bru.setVar("lastCreatedObservationId", res.body.id);
+  } else {
+    console.log("❌ Failed to create observation:", res.status, res.body);
+  }
+}

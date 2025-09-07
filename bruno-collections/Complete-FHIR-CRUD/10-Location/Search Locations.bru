@@ -1,0 +1,229 @@
+meta {
+  name: Search Locations
+  type: http
+  seq: 79
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Location?status=active&type=RADO&_sort=name&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Location search completed successfully");
+    
+    // Display search parameters
+    console.log("\n🔍 Search Parameters:");
+    console.log("Status:", "active");
+    console.log("Type:", "RADO (Radiology unit)");
+    console.log("Sort Order:", "By name");
+    console.log("Max Results:", "10");
+    
+    // Display bundle information
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    console.log("Bundle Type:", bundle.type);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Location Details:");
+      
+      bundle.entry.forEach((entry, index) => {
+        const location = entry.resource;
+        console.log(`\n  --- Location ${index + 1} ---`);
+        console.log(`  ID: ${location.id}`);
+        console.log(`  Status: ${location.status}`);
+        console.log(`  Name: ${location.name || "Not specified"}`);
+        console.log(`  Description: ${location.description || "Not specified"}`);
+        console.log(`  Mode: ${location.mode || "Not specified"}`);
+        
+        // Display aliases
+        if (location.alias && location.alias.length > 0) {
+          console.log(`  Aliases: ${location.alias.join(", ")}`);
+        }
+        
+        // Display type
+        if (location.type && location.type.length > 0) {
+          const types = location.type.map(type => 
+            type.coding?.[0]?.display || type.text || "Unknown"
+          ).join(", ");
+          console.log(`  Types: ${types}`);
+        } else {
+          console.log(`  Types: Not specified`);
+        }
+        
+        // Display physical type
+        if (location.physicalType) {
+          console.log(`  Physical Type: ${location.physicalType.coding?.[0]?.display || location.physicalType.text || "Not specified"}`);
+        } else {
+          console.log(`  Physical Type: Not specified`);
+        }
+        
+        // Display address summary
+        if (location.address) {
+          const addressSummary = [
+            location.address.city,
+            location.address.state,
+            location.address.postalCode
+          ].filter(Boolean).join(", ");
+          console.log(`  Address: ${addressSummary || "Not complete"}`);
+        } else {
+          console.log(`  Address: Not specified`);
+        }
+        
+        // Display position
+        if (location.position) {
+          console.log(`  Coordinates: ${location.position.latitude}, ${location.position.longitude}`);
+        } else {
+          console.log(`  Coordinates: Not specified`);
+        }
+        
+        // Display managing organization
+        console.log(`  Managing Org: ${location.managingOrganization?.display || location.managingOrganization?.reference || "Not specified"}`);
+        
+        // Display contact methods
+        console.log(`  Contact Methods: ${location.telecom?.length || 0}`);
+        if (location.telecom && location.telecom.length > 0) {
+          const primaryContact = location.telecom.find(t => t.rank === 1) || location.telecom[0];
+          console.log(`  Primary Contact: ${primaryContact.system}: ${primaryContact.value}`);
+        }
+        
+        // Display hours summary
+        if (location.hoursOfOperation && location.hoursOfOperation.length > 0) {
+          console.log(`  Operating Schedules: ${location.hoursOfOperation.length}`);
+          const weekdaySchedule = location.hoursOfOperation.find(h => 
+            h.daysOfWeek && h.daysOfWeek.includes("mon")
+          );
+          if (weekdaySchedule && !weekdaySchedule.allDay) {
+            console.log(`  Weekday Hours: ${weekdaySchedule.openingTime} - ${weekdaySchedule.closingTime}`);
+          }
+        } else {
+          console.log(`  Operating Hours: Not specified`);
+        }
+        
+        // Display endpoints
+        console.log(`  Endpoints: ${location.endpoint?.length || 0}`);
+        
+        console.log(`  Last Updated: ${location.meta?.lastUpdated || "Not available"}`);
+      });
+      
+      // Display status breakdown
+      console.log("\n📈 Status Breakdown:");
+      const statuses = {};
+      bundle.entry.forEach(entry => {
+        const status = entry.resource.status || "unknown";
+        statuses[status] = (statuses[status] || 0) + 1;
+      });
+      Object.entries(statuses).forEach(([status, count]) => {
+        console.log(`  ${status}: ${count}`);
+      });
+      
+      // Display physical type breakdown
+      console.log("\n🏠 Physical Type Breakdown:");
+      const physicalTypes = {};
+      bundle.entry.forEach(entry => {
+        const physicalType = entry.resource.physicalType?.coding?.[0]?.display ||
+                            entry.resource.physicalType?.text ||
+                            "Unspecified";
+        physicalTypes[physicalType] = (physicalTypes[physicalType] || 0) + 1;
+      });
+      Object.entries(physicalTypes).forEach(([type, count]) => {
+        console.log(`  ${type}: ${count}`);
+      });
+      
+      // Display mode breakdown
+      console.log("\n📍 Mode Breakdown:");
+      const modes = {};
+      bundle.entry.forEach(entry => {
+        const mode = entry.resource.mode || "unspecified";
+        modes[mode] = (modes[mode] || 0) + 1;
+      });
+      Object.entries(modes).forEach(([mode, count]) => {
+        console.log(`  ${mode}: ${count}`);
+      });
+      
+      // Display geographic distribution
+      console.log("\n🗺️  Geographic Distribution:");
+      const cities = {};
+      const states = {};
+      bundle.entry.forEach(entry => {
+        if (entry.resource.address) {
+          const city = entry.resource.address.city || "Unknown City";
+          const state = entry.resource.address.state || "Unknown State";
+          cities[city] = (cities[city] || 0) + 1;
+          states[state] = (states[state] || 0) + 1;
+        }
+      });
+      
+      console.log("  By City:");
+      Object.entries(cities).forEach(([city, count]) => {
+        console.log(`    ${city}: ${count}`);
+      });
+      
+      console.log("  By State:");
+      Object.entries(states).forEach(([state, count]) => {
+        console.log(`    ${state}: ${count}`);
+      });
+      
+      // Display contact and operational statistics
+      console.log("\n📊 Operational Statistics:");
+      let withContact = 0;
+      let withPosition = 0;
+      let withHours = 0;
+      let withEndpoints = 0;
+      let totalContactMethods = 0;
+      
+      bundle.entry.forEach(entry => {
+        if (entry.resource.telecom && entry.resource.telecom.length > 0) {
+          withContact++;
+          totalContactMethods += entry.resource.telecom.length;
+        }
+        if (entry.resource.position) withPosition++;
+        if (entry.resource.hoursOfOperation && entry.resource.hoursOfOperation.length > 0) withHours++;
+        if (entry.resource.endpoint && entry.resource.endpoint.length > 0) withEndpoints++;
+      });
+      
+      console.log(`  Locations with Contact Info: ${withContact}/${bundle.entry.length}`);
+      console.log(`  Locations with Geographic Position: ${withPosition}/${bundle.entry.length}`);
+      console.log(`  Locations with Operating Hours: ${withHours}/${bundle.entry.length}`);
+      console.log(`  Locations with Endpoints: ${withEndpoints}/${bundle.entry.length}`);
+      console.log(`  Total Contact Methods: ${totalContactMethods}`);
+      console.log(`  Average Contact Methods per Location: ${(totalContactMethods / bundle.entry.length).toFixed(1)}`);
+      
+    } else {
+      console.log("\n📭 No Locations found for the specified criteria");
+      console.log("This could mean:");
+      console.log("• No locations with 'active' status");
+      console.log("• No radiology units in the system");
+      console.log("• Search parameters too restrictive");
+    }
+    
+    // Display navigation links
+    if (bundle.link && bundle.link.length > 0) {
+      console.log("\n🔗 Navigation Links:");
+      bundle.link.forEach(link => {
+        console.log(`  ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📋 Search Summary:");
+    console.log("Search URL:", res.url);
+    console.log("Response Time:", res.responseTime ? `${res.responseTime}ms` : "Not available");
+    console.log("Total Found:", bundle.total || 0);
+    console.log("Showing:", bundle.entry?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to search Locations:", res.status, res.body);
+  }
+}

@@ -1,0 +1,168 @@
+meta {
+  name: Search Media
+  type: http
+  seq: 105
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Media?subject={{lastCreatedPatientId}}&status=completed&type=image&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Media search completed successfully");
+    console.log("Total results:", bundle.total);
+    console.log("Entries returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Media Search Results:");
+      bundle.entry.forEach((entry, index) => {
+        const media = entry.resource;
+        console.log(`\n${index + 1}. Media ID: ${media.id}`);
+        console.log(`   Status: ${media.status}`);
+        console.log(`   Type: ${media.type?.coding?.[0]?.display || media.type?.text || 'Not specified'}`);
+        console.log(`   Modality: ${media.modality?.coding?.[0]?.display || media.modality?.text || 'Not specified'}`);
+        console.log(`   View: ${media.view?.coding?.[0]?.display || media.view?.text || 'Not specified'}`);
+        console.log(`   Subject: ${media.subject?.display || 'Not specified'}`);
+        console.log(`   Encounter: ${media.encounter?.display || 'Not specified'}`);
+        console.log(`   Created: ${media.createdDateTime || media.createdPeriod?.start || 'Unknown'}`);
+        console.log(`   Issued: ${media.issued || 'Not specified'}`);
+        console.log(`   Operator: ${media.operator?.display || 'Not specified'}`);
+        console.log(`   Device: ${media.deviceName || 'Not specified'}`);
+        
+        if (media.identifier && media.identifier.length > 0) {
+          console.log(`   Identifiers: ${media.identifier.length}`);
+          media.identifier.forEach((id, idx) => {
+            console.log(`     ${idx + 1}. ${id.type?.coding?.[0]?.display || 'Unknown'}: ${id.value}`);
+          });
+        }
+        
+        if (media.reasonCode && media.reasonCode.length > 0) {
+          console.log(`   Reasons: ${media.reasonCode.map(r => r.coding?.[0]?.display || r.text).join(', ')}`);
+        }
+        
+        if (media.bodySite) {
+          console.log(`   Body Site: ${media.bodySite.coding?.[0]?.display || media.bodySite.text}`);
+        }
+        
+        if (media.content) {
+          console.log(`   Content Type: ${media.content.contentType}`);
+          console.log(`   Content Size: ${media.content.size ? `${media.content.size} bytes` : 'Not specified'}`);
+          console.log(`   Dimensions: ${media.width || 'Unknown'}x${media.height || 'Unknown'}`);
+          console.log(`   Frames: ${media.frames || 'Not specified'}`);
+          console.log(`   Title: ${media.content.title || 'Not specified'}`);
+          
+          if (media.content.url) {
+            console.log(`   URL: ${media.content.url}`);
+          }
+          
+          if (media.content.data) {
+            console.log(`   Data: Base64 encoded (${media.content.data.length} characters)`);
+          }
+        }
+        
+        if (media.basedOn && media.basedOn.length > 0) {
+          console.log(`   Based On: ${media.basedOn.map(b => b.display).join(', ')}`);
+        }
+        
+        if (media.partOf && media.partOf.length > 0) {
+          console.log(`   Part Of: ${media.partOf.map(p => p.display).join(', ')}`);
+        }
+        
+        if (media.note && media.note.length > 0) {
+          console.log(`   Notes: ${media.note.length}`);
+          console.log(`   Latest Note: ${media.note[media.note.length - 1]?.text?.substring(0, 60)}${media.note[media.note.length - 1]?.text?.length > 60 ? '...' : ''}`);
+        }
+        
+        console.log(`   Last Updated: ${media.meta?.lastUpdated || 'Unknown'}`);
+      });
+      
+      // Store the first media ID for potential use
+      if (bundle.entry.length > 0) {
+        const firstMediaId = bundle.entry[0].resource.id;
+        bru.setEnvVar("searchedMediaId", firstMediaId);
+        console.log(`\n💾 Stored first media ID in environment: ${firstMediaId}`);
+      }
+      
+    } else {
+      console.log("\n📭 No media records found matching the search criteria");
+    }
+    
+    // Display pagination info
+    if (bundle.link) {
+      console.log("\n🔗 Available Links:");
+      bundle.link.forEach(link => {
+        console.log(`   ${link.relation}: ${link.url}`);
+      });
+    }
+    
+    console.log("\n📊 Search Summary:");
+    console.log("Search Parameters Used:");
+    console.log("- Subject:", "{{lastCreatedPatientId}}");
+    console.log("- Status: completed");
+    console.log("- Type: image");
+    console.log("- Count limit: 10");
+    console.log("Total found:", bundle.total);
+    console.log("Returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      const modalityCounts = {};
+      const typeCounts = {};
+      let totalSize = 0;
+      
+      bundle.entry.forEach(entry => {
+        const media = entry.resource;
+        const modality = media.modality?.coding?.[0]?.display || media.modality?.text || 'Unknown';
+        const type = media.type?.coding?.[0]?.display || media.type?.text || 'Unknown';
+        
+        modalityCounts[modality] = (modalityCounts[modality] || 0) + 1;
+        typeCounts[type] = (typeCounts[type] || 0) + 1;
+        
+        if (media.content?.size) {
+          totalSize += media.content.size;
+        }
+      });
+      
+      console.log("\n📈 Modality Distribution:");
+      Object.entries(modalityCounts).forEach(([modality, count]) => {
+        console.log(`   ${modality}: ${count}`);
+      });
+      
+      console.log("\n📊 Type Distribution:");
+      Object.entries(typeCounts).forEach(([type, count]) => {
+        console.log(`   ${type}: ${count}`);
+      });
+      
+      if (totalSize > 0) {
+        console.log("\n💾 Total Content Size:", `${totalSize} bytes (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
+      }
+    }
+    
+  } else {
+    console.log("❌ Media search failed:", res.status);
+    console.log("Response:", res.body);
+    
+    if (res.body && res.body.resourceType === "OperationOutcome") {
+      console.log("\n❌ Error Details:");
+      if (res.body.issue && res.body.issue.length > 0) {
+        res.body.issue.forEach((issue, index) => {
+          console.log(`Issue ${index + 1}:`);
+          console.log("  Severity:", issue.severity);
+          console.log("  Code:", issue.code);
+          console.log("  Details:", issue.details?.text || issue.diagnostics);
+        });
+      }
+    }
+  }
+}

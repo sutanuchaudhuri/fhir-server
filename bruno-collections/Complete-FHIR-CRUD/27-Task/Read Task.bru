@@ -1,0 +1,120 @@
+meta {
+  name: Read Task
+  type: http
+  seq: 98
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Task/{{lastCreatedTaskId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const task = res.body;
+    console.log("✅ Task retrieved successfully");
+    console.log("Task ID:", task.id);
+    
+    console.log("\n📋 Task Details:");
+    console.log("Status:", task.status);
+    console.log("Intent:", task.intent);
+    console.log("Priority:", task.priority);
+    console.log("Code:", task.code?.coding?.[0]?.display || task.code?.text);
+    console.log("Description:", task.description);
+    console.log("For:", task.for?.display);
+    console.log("Encounter:", task.encounter?.display);
+    console.log("Authored On:", task.authoredOn);
+    console.log("Last Modified:", task.lastModified);
+    console.log("Requester:", task.requester?.display);
+    console.log("Owner:", task.owner?.display);
+    console.log("Business Status:", task.businessStatus?.coding?.[0]?.display || task.businessStatus?.text);
+    
+    if (task.performerType && task.performerType.length > 0) {
+      console.log("\n👥 Performer Types:");
+      task.performerType.forEach((type, index) => {
+        console.log(`  ${index + 1}. ${type.coding?.[0]?.display || type.text}`);
+      });
+    }
+    
+    if (task.reasonCode && task.reasonCode.length > 0) {
+      console.log("\n🎯 Reason Codes:");
+      task.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text}`);
+      });
+    }
+    
+    if (task.reasonReference && task.reasonReference.length > 0) {
+      console.log("\n🔗 Reason References:");
+      task.reasonReference.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (task.note && task.note.length > 0) {
+      console.log("\n📝 Notes:");
+      task.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+        console.log(`     Time: ${note.time}`);
+        console.log(`     Author: ${note.authorString || note.authorReference?.display}`);
+      });
+    }
+    
+    if (task.input && task.input.length > 0) {
+      console.log("\n📥 Input Parameters:");
+      task.input.forEach((input, index) => {
+        console.log(`  ${index + 1}. Type: ${input.type?.coding?.[0]?.display || input.type?.text}`);
+        if (input.valueString) console.log(`     Value: ${input.valueString}`);
+        if (input.valueBoolean !== undefined) console.log(`     Value: ${input.valueBoolean}`);
+        if (input.valueQuantity) console.log(`     Value: ${input.valueQuantity.value} ${input.valueQuantity.unit}`);
+        if (input.valueReference) console.log(`     Reference: ${input.valueReference.display}`);
+      });
+    }
+    
+    if (task.output && task.output.length > 0) {
+      console.log("\n📤 Output Results:");
+      task.output.forEach((output, index) => {
+        console.log(`  ${index + 1}. Type: ${output.type?.coding?.[0]?.display || output.type?.text}`);
+        if (output.valueString) console.log(`     Value: ${output.valueString}`);
+        if (output.valueBoolean !== undefined) console.log(`     Value: ${output.valueBoolean}`);
+        if (output.valueQuantity) console.log(`     Value: ${output.valueQuantity.value} ${output.valueQuantity.unit}`);
+        if (output.valueReference) console.log(`     Reference: ${output.valueReference.display}`);
+      });
+    }
+    
+    if (task.restriction) {
+      console.log("\n🔒 Task Restrictions:");
+      console.log("Repetitions:", task.restriction.repetitions);
+      if (task.restriction.period) {
+        console.log("Period:", `${task.restriction.period.start} to ${task.restriction.period.end}`);
+      }
+      if (task.restriction.recipient && task.restriction.recipient.length > 0) {
+        console.log("Recipients:", task.restriction.recipient.map(r => r.display).join(', '));
+      }
+    }
+    
+    console.log("\n📊 Task Summary:");
+    console.log("Execution Period:", `${task.executionPeriod?.start || 'Not started'} to ${task.executionPeriod?.end || 'Not completed'}`);
+    console.log("Group Identifier:", task.groupIdentifier?.value);
+    console.log("Part Of:", task.partOf?.map(p => p.display).join(', ') || 'None');
+    console.log("Focus:", task.focus?.display || 'None');
+    console.log("Created:", task.meta?.lastUpdated || "Unknown");
+    console.log("Version:", task.meta?.versionId || "1");
+    
+  } else if (res.status === 404) {
+    console.log("❌ Task not found");
+    console.log("The Task ID may be incorrect or the resource may have been deleted");
+    
+  } else {
+    console.log("❌ Failed to retrieve Task:", res.status);
+    console.log("Response:", res.body);
+  }
+}

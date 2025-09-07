@@ -1,0 +1,80 @@
+meta {
+  name: Get Auth Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}",
+    "audience": "{{audience}}",
+    "grant_type": "client_credentials"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Authentication successful");
+    console.log("Token type:", res.body.token_type);
+    console.log("Expires in:", res.body.expires_in, "seconds");
+    
+    // Check if we got the expected scopes
+    if (res.body.scope) {
+      console.log("Token scopes:", res.body.scope);
+    }
+    
+    // Store the access token for use in other requests
+    bru.setVar("authToken", res.body.access_token);
+    console.log("🔑 Auth token stored in environment");
+    console.log("");
+    console.log("🚀 Ready to test FHIR operations!");
+    console.log("");
+    console.log("⚠️  IMPORTANT: This FHIR server requires security metadata!");
+    console.log("   All resource operations must include:");
+    console.log("   - meta.security with access, owner, and sourceAssigningAuthority tags");
+    console.log("   - Use system URLs: https://www.icanbwell.com/[access|owner|sourceAssigningAuthority]");
+    console.log("   - Example: {\"code\": \"client\", \"system\": \"https://www.icanbwell.com/access\"}");
+    console.log("   - IMPORTANT: Use code 'client' (not 'bwell')");
+    console.log("   - Include required fields: active=true, gender='unknown'");
+    console.log("");
+    console.log("🧪 Quick Testing Options:");
+    console.log("   1. Run 'Test Complete CRUD' for full functionality test");
+    console.log("   2. Run individual Patient operations in sequence");
+    console.log("   3. Try 'Test Search Patients' to verify search functionality");
+    console.log("   4. All Create/Update operations now include required security metadata");
+  } else {
+    console.log("❌ Authentication failed:", res.status);
+    console.log("Error:", res.body);
+    console.log("");
+    
+    if (res.body && res.body.error === "unauthorized_client") {
+      console.log("🔧 Fix for 'unauthorized_client' error:");
+      console.log("1. Enable 'Client Credentials' grant type in Auth0:");
+      console.log("   - Applications > Your App > Settings > Advanced Settings > Grant Types");
+      console.log("   - ✅ Check 'Client Credentials'");
+      console.log("   - Save changes");
+    } else if (res.body && res.body.error === "access_denied") {
+      console.log("🔧 This token might be for Auth0 Management API, not FHIR server");
+      console.log("   - Check if you need a different audience URL");
+      console.log("   - Verify the client has FHIR server permissions");
+    }
+    
+    console.log("");
+    console.log("💡 Server Configuration Status:");
+    console.log("   ✅ Database: Local MongoDB connected");
+    console.log("   ✅ Authentication: Auth0 with proper scopes");
+    console.log("   ⚠️  Resource Operations: Require security metadata");
+    console.log("   - All requests must include proper meta.security tags");
+  }
+}

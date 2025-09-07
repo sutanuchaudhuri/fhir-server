@@ -1,0 +1,100 @@
+meta {
+  name: Create Encounter
+  type: http
+  seq: 50
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Encounter
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Encounter",
+    "status": "finished",
+    "class": {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "AMB",
+      "display": "ambulatory"
+    },
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "162673000",
+            "display": "General examination of patient"
+          }
+        ]
+      }
+    ],
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "participant": [
+      {
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "ATND",
+                "display": "attender"
+              }
+            ]
+          }
+        ],
+        "individual": {
+          "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+          "display": "Dr. Emily Smith"
+        }
+      }
+    ],
+    "period": {
+      "start": "2024-01-15T14:00:00Z",
+      "end": "2024-01-15T15:00:00Z"
+    },
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "25064002",
+            "display": "Headache"
+          }
+        ]
+      }
+    ],
+    "serviceProvider": {
+      "reference": "Organization/{{lastCreatedOrganizationId}}",
+      "display": "City General Hospital"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ Encounter created successfully");
+    console.log("Encounter ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Class:", res.body.class?.display);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    
+    // Store the encounter ID for use in other requests
+    bru.setVar("lastCreatedEncounterId", res.body.id);
+  } else {
+    console.log("❌ Failed to create encounter:", res.status, res.body);
+  }
+}

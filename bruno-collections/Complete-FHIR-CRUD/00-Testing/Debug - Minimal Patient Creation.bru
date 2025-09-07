@@ -1,0 +1,123 @@
+meta {
+  name: Debug - Minimal Patient Creation
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {
+          "system": "https://www.icanbwell.com/access",
+          "code": "bwell"
+        },
+        {
+          "system": "https://www.icanbwell.com/owner",
+          "code": "bwell"
+        },
+        {
+          "system": "https://www.icanbwell.com/sourceAssigningAuthority",
+          "code": "bwell"
+        }
+      ]
+    },
+    "active": true,
+    "name": [
+      {
+        "family": "TestPatient",
+        "given": ["Debug"]
+      }
+    ],
+    "gender": "unknown"
+  }
+}
+
+script:post-response {
+  console.log("=== DEBUG - MINIMAL PATIENT CREATION ===");
+  console.log("");
+  console.log("🔍 Request URL:", "{{baseUrl}}/{{fhirVersion}}/Patient");
+  console.log("🔑 Auth Token Present:", "{{authToken}}" ? "✅ Yes" : "❌ No");
+  console.log("");
+  
+  console.log("📤 Request Body:");
+  console.log(JSON.stringify({
+    "resourceType": "Patient",
+    "meta": {
+      "security": [
+        {"system": "https://www.icanbwell.com/access", "code": "bwell"},
+        {"system": "https://www.icanbwell.com/owner", "code": "bwell"},
+        {"system": "https://www.icanbwell.com/sourceAssigningAuthority", "code": "bwell"}
+      ]
+    },
+    "active": true,
+    "name": [{"family": "TestPatient", "given": ["Debug"]}],
+    "gender": "unknown"
+  }, null, 2));
+  
+  console.log("");
+  console.log("📥 Response Status:", res.status);
+  console.log("📥 Response Headers:", JSON.stringify(res.headers, null, 2));
+  console.log("📥 Response Body:", JSON.stringify(res.body, null, 2));
+  console.log("");
+  
+  if (res.status === 201) {
+    console.log("✅ SUCCESS: Patient created successfully!");
+    console.log("Patient ID:", res.body.id);
+    bru.setVar("debugPatientId", res.body.id);
+    
+  } else if (res.status === 500) {
+    console.log("❌ INTERNAL SERVER ERROR");
+    console.log("");
+    console.log("🔧 TROUBLESHOOTING STEPS:");
+    console.log("");
+    console.log("1. Check server status:");
+    console.log("   docker-compose ps");
+    console.log("   curl http://localhost:3000/health");
+    console.log("");
+    console.log("2. Check server logs:");
+    console.log("   docker logs fhir-server-fhir-1 --tail 50");
+    console.log("");
+    console.log("3. Verify security metadata format:");
+    console.log("   - All 3 required security tags present");
+    console.log("   - Correct system URLs");
+    console.log("   - Valid code values");
+    console.log("");
+    console.log("4. Test minimal request:");
+    console.log("   curl -X POST http://localhost:3000/4_0_0/Patient \\");
+    console.log("     -H 'Content-Type: application/fhir+json' \\");
+    console.log("     -H 'Authorization: Bearer YOUR_TOKEN' \\");
+    console.log("     -d '{\"resourceType\":\"Patient\",\"meta\":{\"security\":[{\"system\":\"https://www.icanbwell.com/access\",\"code\":\"bwell\"},{\"system\":\"https://www.icanbwell.com/owner\",\"code\":\"bwell\"},{\"system\":\"https://www.icanbwell.com/sourceAssigningAuthority\",\"code\":\"bwell\"}]},\"active\":true,\"name\":[{\"family\":\"Test\"}],\"gender\":\"unknown\"}'");
+    
+  } else if (res.status === 401) {
+    console.log("❌ AUTHENTICATION FAILED");
+    console.log("🔧 Run 'Get Auth Token' first to authenticate");
+    
+  } else if (res.status === 400) {
+    console.log("❌ BAD REQUEST");
+    console.log("Resource validation failed - check request format");
+    
+  } else {
+    console.log("❌ UNEXPECTED ERROR");
+    console.log("Status:", res.status);
+  }
+  
+  console.log("");
+  console.log("==========================================");
+}

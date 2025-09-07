@@ -1,0 +1,117 @@
+meta {
+  name: Read Media
+  type: http
+  seq: 102
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Media/{{lastCreatedMediaId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const media = res.body;
+    console.log("✅ Media retrieved successfully");
+    console.log("Media ID:", media.id);
+    
+    console.log("\n📋 Media Details:");
+    console.log("Status:", media.status);
+    console.log("Type:", media.type?.coding?.[0]?.display || media.type?.text);
+    console.log("Modality:", media.modality?.coding?.[0]?.display || media.modality?.text);
+    console.log("View:", media.view?.coding?.[0]?.display || media.view?.text);
+    console.log("Subject:", media.subject?.display);
+    console.log("Encounter:", media.encounter?.display);
+    console.log("Created:", media.createdDateTime || media.createdPeriod?.start);
+    console.log("Issued:", media.issued);
+    console.log("Operator:", media.operator?.display);
+    console.log("Device Name:", media.deviceName);
+    console.log("Height:", media.height);
+    console.log("Width:", media.width);
+    console.log("Frames:", media.frames);
+    console.log("Duration:", media.duration);
+    
+    if (media.identifier && media.identifier.length > 0) {
+      console.log("\n🏷️ Identifiers:");
+      media.identifier.forEach((id, index) => {
+        console.log(`  ${index + 1}. ${id.type?.coding?.[0]?.display || id.type?.text || 'Unknown Type'}: ${id.value}`);
+        console.log(`     System: ${id.system || 'Not specified'}`);
+      });
+    }
+    
+    if (media.basedOn && media.basedOn.length > 0) {
+      console.log("\n📋 Based On:");
+      media.basedOn.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (media.partOf && media.partOf.length > 0) {
+      console.log("\n🔗 Part Of:");
+      media.partOf.forEach((ref, index) => {
+        console.log(`  ${index + 1}. ${ref.display}`);
+      });
+    }
+    
+    if (media.reasonCode && media.reasonCode.length > 0) {
+      console.log("\n🎯 Reason Codes:");
+      media.reasonCode.forEach((reason, index) => {
+        console.log(`  ${index + 1}. ${reason.coding?.[0]?.display || reason.text}`);
+      });
+    }
+    
+    if (media.bodySite) {
+      console.log("\n🫀 Body Site:");
+      console.log("Code:", media.bodySite.coding?.[0]?.display || media.bodySite.text);
+    }
+    
+    if (media.note && media.note.length > 0) {
+      console.log("\n📝 Notes:");
+      media.note.forEach((note, index) => {
+        console.log(`  ${index + 1}. ${note.text}`);
+        console.log(`     Time: ${note.time}`);
+        console.log(`     Author: ${note.authorString || note.authorReference?.display}`);
+      });
+    }
+    
+    if (media.content) {
+      console.log("\n💾 Content Information:");
+      console.log("Content Type:", media.content.contentType);
+      console.log("Language:", media.content.language);
+      console.log("Size:", media.content.size ? `${media.content.size} bytes` : 'Not specified');
+      console.log("Title:", media.content.title);
+      console.log("Creation Date:", media.content.creation);
+      console.log("Hash:", media.content.hash);
+      
+      if (media.content.url) {
+        console.log("URL:", media.content.url);
+      }
+      
+      if (media.content.data) {
+        console.log("Data:", `Base64 encoded (${media.content.data.length} characters)`);
+      }
+    }
+    
+    console.log("\n📊 Media Summary:");
+    console.log("Created:", media.meta?.lastUpdated || "Unknown");
+    console.log("Version:", media.meta?.versionId || "1");
+    console.log("Profile:", media.meta?.profile?.join(', ') || 'Default');
+    
+  } else if (res.status === 404) {
+    console.log("❌ Media not found");
+    console.log("The Media ID may be incorrect or the resource may have been deleted");
+    
+  } else {
+    console.log("❌ Failed to retrieve Media:", res.status);
+    console.log("Response:", res.body);
+  }
+}

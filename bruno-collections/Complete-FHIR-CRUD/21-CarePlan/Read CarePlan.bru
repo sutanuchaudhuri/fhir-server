@@ -1,0 +1,94 @@
+meta {
+  name: Read CarePlan
+  type: http
+  seq: 55
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/CarePlan/{{lastCreatedCarePlanId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ CarePlan retrieved successfully");
+    console.log("CarePlan ID:", res.body.id);
+    console.log("Resource Type:", res.body.resourceType);
+    console.log("Status:", res.body.status);
+    console.log("Intent:", res.body.intent);
+    console.log("Title:", res.body.title);
+    console.log("Description:", res.body.description);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Author:", res.body.author?.display);
+    console.log("Created:", res.body.created);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    
+    if (res.body.category && res.body.category.length > 0) {
+      console.log("\n📂 Categories:");
+      res.body.category.forEach((cat, index) => {
+        console.log(`${index + 1}. ${cat.coding?.[0]?.display}`);
+      });
+    }
+    
+    if (res.body.addresses && res.body.addresses.length > 0) {
+      console.log("\n🎯 Addresses:");
+      res.body.addresses.forEach((addr, index) => {
+        console.log(`${index + 1}. ${addr.display || addr.reference}`);
+      });
+    }
+    
+    if (res.body.goal && res.body.goal.length > 0) {
+      console.log("\n🏆 Goals:");
+      res.body.goal.forEach((goal, index) => {
+        console.log(`${index + 1}. ${goal.display || goal.reference}`);
+      });
+    }
+    
+    if (res.body.activity && res.body.activity.length > 0) {
+      console.log("\n📋 Activities:");
+      res.body.activity.forEach((activity, index) => {
+        console.log(`${index + 1}. ${activity.detail?.code?.text || activity.detail?.kind}`);
+        console.log(`   Status: ${activity.detail?.status}`);
+        
+        if (activity.detail?.scheduledTiming?.repeat) {
+          const repeat = activity.detail.scheduledTiming.repeat;
+          console.log(`   Schedule: ${repeat.frequency} time(s) per ${repeat.period} ${repeat.periodUnit}`);
+        }
+        
+        if (activity.progress && activity.progress.length > 0) {
+          console.log(`   Progress: ${activity.progress[0].text?.substring(0, 100)}...`);
+        }
+        
+        if (activity.detail?.description) {
+          console.log(`   Description: ${activity.detail.description.substring(0, 100)}...`);
+        }
+        console.log("");
+      });
+    }
+    
+    if (res.body.contributor && res.body.contributor.length > 0) {
+      console.log("👥 Contributors:");
+      res.body.contributor.forEach((contrib, index) => {
+        console.log(`${index + 1}. ${contrib.display || contrib.reference}`);
+      });
+    }
+    
+    if (res.body.careTeam && res.body.careTeam.length > 0) {
+      console.log("\n🏥 Care Teams:");
+      res.body.careTeam.forEach((team, index) => {
+        console.log(`${index + 1}. ${team.display || team.reference}`);
+      });
+    }
+  } else {
+    console.log("❌ Failed to retrieve care plan:", res.status, res.body);
+  }
+}

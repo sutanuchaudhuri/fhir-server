@@ -1,0 +1,276 @@
+meta {
+  name: Update Condition
+  type: http
+  seq: 89
+}
+
+put {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition/{{lastCreatedConditionId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "Condition",
+    "id": "{{lastCreatedConditionId}}",
+    "meta": {
+      "profile": ["http://hl7.org/fhir/StructureDefinition/Condition"]
+    },
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "active",
+          "display": "Active"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "problem-list-item",
+            "display": "Problem List Item"
+          }
+        ]
+      }
+    ],
+    "severity": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "6736007",
+          "display": "Moderate severity"
+        }
+      ],
+      "text": "Moderate - Updated assessment"
+    },
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "38341003",
+          "display": "Hypertensive disorder, systemic arterial"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "I10",
+          "display": "Essential hypertension"
+        }
+      ],
+      "text": "Essential Hypertension - Updated Diagnosis"
+    },
+    "bodySite": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "87612001",
+            "display": "Blood vessel structure"
+          }
+        ],
+        "text": "Systemic circulation"
+      }
+    ],
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Follow-up Visit"
+    },
+    "onsetDateTime": "2023-01-15T10:30:00Z",
+    "recordedDate": "{{$isoTimestamp}}",
+    "recorder": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "asserter": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "stage": [
+      {
+        "summary": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "263513003",
+              "display": "Stable"
+            }
+          ],
+          "text": "Stable hypertension with good control"
+        },
+        "assessment": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}",
+            "display": "Blood Pressure Reading"
+          }
+        ],
+        "type": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "385356007",
+              "display": "Tumor stage finding"
+            }
+          ]
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "271649006",
+                "display": "Systolic blood pressure"
+              }
+            ],
+            "text": "Elevated systolic blood pressure readings"
+          }
+        ],
+        "detail": [
+          {
+            "reference": "Observation/{{lastCreatedObservationId}}",
+            "display": "Blood Pressure Measurement"
+          },
+          {
+            "reference": "DiagnosticReport/cardiac-echo-001",
+            "display": "Cardiac Echocardiogram"
+          }
+        ]
+      },
+      {
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "271650006",
+                "display": "Diastolic blood pressure"
+              }
+            ],
+            "text": "Elevated diastolic blood pressure readings"
+          }
+        ],
+        "detail": [
+          {
+            "reference": "Observation/diastolic-bp-series-001",
+            "display": "Diastolic BP Trend"
+          }
+        ]
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient shows good compliance with medication regimen. Blood pressure readings have improved since last visit. Continue current antihypertensive therapy. Updated assessment shows stable condition with moderate severity. Recommend lifestyle modifications including low-sodium diet and regular exercise. Follow-up in 3 months or sooner if symptoms worsen.",
+        "time": "{{$isoTimestamp}}"
+      },
+      {
+        "text": "Updated clinical notes: Patient reports occasional headaches in the morning. No chest pain or shortness of breath. Weight stable. Good medication adherence confirmed by pharmacy records.",
+        "time": "{{$isoTimestamp}}"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const condition = res.body;
+    console.log("✅ Condition updated successfully");
+    console.log("Condition ID:", condition.id);
+    
+    console.log("\n📋 Updated Condition Details:");
+    console.log("Clinical Status:", condition.clinicalStatus?.coding?.[0]?.display);
+    console.log("Verification Status:", condition.verificationStatus?.coding?.[0]?.display);
+    console.log("Category:", condition.category?.[0]?.coding?.[0]?.display);
+    console.log("Severity:", condition.severity?.coding?.[0]?.display);
+    console.log("Code:", condition.code?.coding?.[0]?.display);
+    console.log("Subject:", condition.subject?.display);
+    console.log("Onset Date:", condition.onsetDateTime);
+    console.log("Recorded Date:", condition.recordedDate);
+    
+    if (condition.bodySite && condition.bodySite.length > 0) {
+      console.log("\n🎯 Body Sites:");
+      condition.bodySite.forEach((site, index) => {
+        console.log(`  ${index + 1}. ${site.coding?.[0]?.display} - ${site.text}`);
+      });
+    }
+    
+    if (condition.stage && condition.stage.length > 0) {
+      console.log("\n📊 Disease Staging:");
+      condition.stage.forEach((stage, index) => {
+        console.log(`  Stage ${index + 1}:`);
+        console.log(`    Summary: ${stage.summary?.coding?.[0]?.display} - ${stage.summary?.text}`);
+        console.log(`    Type: ${stage.type?.coding?.[0]?.display}`);
+        if (stage.assessment && stage.assessment.length > 0) {
+          console.log(`    Assessments: ${stage.assessment.length}`);
+          stage.assessment.forEach((assess, idx) => {
+            console.log(`      ${idx + 1}. ${assess.display}`);
+          });
+        }
+      });
+    }
+    
+    if (condition.evidence && condition.evidence.length > 0) {
+      console.log("\n🔬 Supporting Evidence:");
+      condition.evidence.forEach((evidence, index) => {
+        console.log(`  Evidence ${index + 1}:`);
+        if (evidence.code && evidence.code.length > 0) {
+          evidence.code.forEach((code, idx) => {
+            console.log(`    Code ${idx + 1}: ${code.coding?.[0]?.display} - ${code.text}`);
+          });
+        }
+        if (evidence.detail && evidence.detail.length > 0) {
+          console.log(`    Supporting Details: ${evidence.detail.length}`);
+          evidence.detail.forEach((detail, idx) => {
+            console.log(`      ${idx + 1}. ${detail.display}`);
+          });
+        }
+      });
+    }
+    
+    if (condition.note && condition.note.length > 0) {
+      console.log("\n📝 Updated Clinical Notes:");
+      condition.note.forEach((note, index) => {
+        console.log(`  Note ${index + 1} (${note.time}):`);
+        console.log(`    ${note.text.substring(0, 100)}${note.text.length > 100 ? '...' : ''}`);
+      });
+    }
+    
+    console.log("\n📊 Update Summary:");
+    console.log("Version:", condition.meta?.versionId || "Unknown");
+    console.log("Last Updated:", condition.meta?.lastUpdated || "Unknown");
+    console.log("Evidence Items:", condition.evidence?.length || 0);
+    console.log("Clinical Notes:", condition.note?.length || 0);
+    console.log("Body Sites:", condition.bodySite?.length || 0);
+    console.log("Disease Stages:", condition.stage?.length || 0);
+    
+  } else {
+    console.log("❌ Failed to update Condition:", res.status, res.body);
+  }
+}

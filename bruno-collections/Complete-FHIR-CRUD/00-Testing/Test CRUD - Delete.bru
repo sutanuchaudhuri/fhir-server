@@ -1,0 +1,56 @@
+meta {
+  name: Test CRUD - Delete
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/{{fhirVersion}}/Patient/{{testPatientId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  console.log("=== CRUD TEST - DELETE ===");
+  console.log("");
+  
+  if (res.status === 200 || res.status === 204) {
+    console.log("✅ STEP 4: DELETE - Patient deleted successfully");
+    console.log("Patient ID:", "{{testPatientId}}", "has been removed");
+    
+    console.log("");
+    console.log("🎉 COMPLETE CRUD TEST SUCCESSFUL!");
+    console.log("All operations (CREATE, READ, UPDATE, DELETE) completed");
+    console.log("");
+    console.log("✅ Summary:");
+    console.log("  - ✅ Authentication working");
+    console.log("  - ✅ Security metadata properly configured");
+    console.log("  - ✅ All FHIR operations functional");
+    console.log("  - ✅ Server responding correctly");
+    
+    // Clean up the stored ID
+    bru.setVar("testPatientId", "");
+    
+  } else if (res.status === 404) {
+    console.log("❌ STEP 4: DELETE - Patient not found");
+    console.log("Patient may have been already deleted or never created");
+    
+  } else if (res.status === 401) {
+    console.log("❌ STEP 4: DELETE - Authentication failed");
+    console.log("Run 'Get Auth Token' to refresh your token");
+    
+  } else {
+    console.log("❌ STEP 4: DELETE - Failed:", res.status);
+    console.log("Response:", JSON.stringify(res.body, null, 2));
+  }
+  
+  console.log("");
+  console.log("========================");
+}

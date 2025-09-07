@@ -1,0 +1,54 @@
+meta {
+  name: Search Diagnoses
+  type: http
+  seq: 28
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Condition?patient={{lastCreatedPatientId}}&clinical-status=active&category=encounter-diagnosis&_count=20&_sort=-recorded-date
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log("✅ Diagnosis search successful");
+    console.log("Bundle type:", res.body.type);
+    console.log("Total diagnoses found:", res.body.total);
+    console.log("Diagnoses returned:", res.body.entry?.length || 0);
+    
+    if (res.body.entry && res.body.entry.length > 0) {
+      console.log("\n🏥 Patient Diagnoses:");
+      res.body.entry.forEach((entry, index) => {
+        const condition = entry.resource;
+        console.log(`${index + 1}. ${condition.code?.text || condition.code?.coding?.[0]?.display} (ID: ${condition.id})`);
+        console.log(`   Clinical Status: ${condition.clinicalStatus?.coding?.[0]?.display}`);
+        console.log(`   Verification: ${condition.verificationStatus?.coding?.[0]?.display}`);
+        console.log(`   Severity: ${condition.severity?.coding?.[0]?.display || 'Not specified'}`);
+        console.log(`   Onset: ${condition.onsetDateTime || condition.onsetPeriod?.start || 'Not specified'}`);
+        console.log(`   Recorded: ${condition.recordedDate}`);
+        console.log(`   Recorder: ${condition.recorder?.display || 'Not specified'}`);
+        
+        if (condition.code?.coding) {
+          console.log(`   Codes: ${condition.code.coding.map(c => `${c.system}: ${c.code}`).join(', ')}`);
+        }
+        console.log("");
+      });
+    }
+    
+    // Store first condition ID for other tests
+    if (res.body.entry && res.body.entry.length > 0) {
+      bru.setEnvVar("searchedConditionId", res.body.entry[0].resource.id);
+    }
+  } else {
+    console.log("❌ Failed to search diagnoses:", res.status, res.body);
+  }
+}

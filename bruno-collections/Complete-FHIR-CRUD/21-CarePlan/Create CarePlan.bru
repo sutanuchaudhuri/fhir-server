@@ -1,0 +1,340 @@
+meta {
+  name: Create CarePlan
+  type: http
+  seq: 47
+}
+
+post {
+  url: {{baseUrl}}/{{fhirVersion}}/CarePlan
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+  Content-Type: application/fhir+json
+}
+
+body:json {
+  {
+    "resourceType": "CarePlan",
+    "identifier": [
+      {
+        "system": "http://example.org/careplan-identifier",
+        "value": "CP-HTN-2024-001"
+      }
+    ],
+    "instantiatesCanonical": [
+      "http://example.org/PlanDefinition/hypertension-management"
+    ],
+    "instantiatesUri": [
+      "http://example.org/protocols/hypertension-care-protocol"
+    ],
+    "basedOn": [
+      {
+        "reference": "ServiceRequest/hypertension-referral-123"
+      }
+    ],
+    "replaces": [
+      {
+        "reference": "CarePlan/previous-htn-plan-456"
+      }
+    ],
+    "partOf": [
+      {
+        "reference": "CarePlan/comprehensive-care-plan-789"
+      }
+    ],
+    "status": "active",
+    "intent": "plan",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/careplan-category",
+            "code": "assess-plan",
+            "display": "Assessment and Plan of Treatment"
+          }
+        ]
+      }
+    ],
+    "title": "Hypertension Management Care Plan",
+    "description": "Comprehensive care plan for managing patient's hypertension through medication, lifestyle modifications, and regular monitoring",
+    "subject": {
+      "reference": "Patient/{{lastCreatedPatientId}}",
+      "display": "John Michael Doe"
+    },
+    "encounter": {
+      "reference": "Encounter/{{lastCreatedEncounterId}}",
+      "display": "Initial Hypertension Consultation"
+    },
+    "period": {
+      "start": "2024-01-15",
+      "end": "2024-07-15"
+    },
+    "created": "2024-01-15T10:30:00Z",
+    "author": {
+      "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+      "display": "Dr. Emily Smith"
+    },
+    "contributor": [
+      {
+        "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+        "display": "Dr. Emily Smith - Primary Care Physician"
+      },
+      {
+        "reference": "Practitioner/cardiologist-456",
+        "display": "Dr. Sarah Johnson - Cardiologist"
+      }
+    ],
+    "careTeam": [
+      {
+        "reference": "CareTeam/htn-care-team-123"
+      }
+    ],
+    "addresses": [
+      {
+        "reference": "Condition/{{lastCreatedConditionId}}",
+        "display": "Essential Hypertension"
+      }
+    ],
+    "supportingInfo": [
+      {
+        "reference": "Observation/{{lastCreatedObservationId}}",
+        "display": "Blood Pressure Readings"
+      },
+      {
+        "reference": "DiagnosticReport/{{lastCreatedDiagnosticReportId}}",
+        "display": "Cardiac Assessment"
+      }
+    ],
+    "goal": [
+      {
+        "reference": "Goal/{{lastCreatedGoalId}}",
+        "display": "Blood Pressure Control Goal"
+      }
+    ],
+    "activity": [
+      {
+        "outcomeCodeableConcept": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "182840001",
+                "display": "Drug allergy"
+              }
+            ],
+            "text": "Blood pressure improved"
+          }
+        ],
+        "outcomeReference": [
+          {
+            "reference": "Observation/bp-reading-follow-up-123"
+          }
+        ],
+        "progress": [
+          {
+            "text": "Patient has been compliant with medication regimen. Blood pressure readings show improvement from baseline."
+          }
+        ],
+        "reference": {
+          "reference": "MedicationRequest/{{lastCreatedMedicationRequestId}}",
+          "display": "Lisinopril 10mg daily"
+        },
+        "detail": {
+          "kind": "MedicationRequest",
+          "instantiatesCanonical": [
+            "http://example.org/ActivityDefinition/ace-inhibitor-therapy"
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "182840001",
+                "display": "Drug allergy"
+              }
+            ],
+            "text": "ACE Inhibitor Therapy"
+          },
+          "reasonCode": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "38341003",
+                  "display": "Hypertensive disorder"
+                }
+              ]
+            }
+          ],
+          "reasonReference": [
+            {
+              "reference": "Condition/{{lastCreatedConditionId}}"
+            }
+          ],
+          "goal": [
+            {
+              "reference": "Goal/{{lastCreatedGoalId}}"
+            }
+          ],
+          "status": "in-progress",
+          "statusReason": {
+            "text": "Patient tolerating medication well, no side effects reported"
+          },
+          "doNotPerform": false,
+          "scheduledTiming": {
+            "repeat": {
+              "frequency": 1,
+              "period": 1,
+              "periodUnit": "d"
+            }
+          },
+          "location": {
+            "reference": "Location/{{lastCreatedLocationId}}",
+            "display": "Primary Care Clinic"
+          },
+          "performer": [
+            {
+              "reference": "Practitioner/{{lastCreatedPractitionerId}}",
+              "display": "Dr. Emily Smith"
+            }
+          ],
+          "productCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                "code": "29046",
+                "display": "Lisinopril"
+              }
+            ]
+          },
+          "dailyAmount": {
+            "value": 10,
+            "unit": "mg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mg"
+          },
+          "quantity": {
+            "value": 30,
+            "unit": "tablet"
+          },
+          "description": "Take 10mg of Lisinopril once daily in the morning with or without food. Monitor blood pressure daily and report any side effects."
+        }
+      },
+      {
+        "detail": {
+          "kind": "Appointment",
+          "code": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185349003",
+                "display": "Encounter for check up"
+              }
+            ],
+            "text": "Follow-up Blood Pressure Check"
+          },
+          "status": "scheduled",
+          "doNotPerform": false,
+          "scheduledTiming": {
+            "repeat": {
+              "frequency": 1,
+              "period": 2,
+              "periodUnit": "wk"
+            }
+          },
+          "location": {
+            "reference": "Location/{{lastCreatedLocationId}}"
+          },
+          "performer": [
+            {
+              "reference": "Practitioner/{{lastCreatedPractitionerId}}"
+            }
+          ],
+          "description": "Bi-weekly follow-up appointments to monitor blood pressure response to medication and assess for any side effects."
+        }
+      },
+      {
+        "detail": {
+          "kind": "Task",
+          "code": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "226060000",
+                "display": "Stress management"
+              }
+            ],
+            "text": "Lifestyle Modification Program"
+          },
+          "status": "in-progress",
+          "doNotPerform": false,
+          "goal": [
+            {
+              "reference": "Goal/{{lastCreatedGoalId}}"
+            }
+          ],
+          "description": "Implement lifestyle modifications including: 1) DASH diet with reduced sodium intake (<2g/day), 2) Regular aerobic exercise 30 minutes 5 days/week, 3) Weight management to achieve BMI <25, 4) Stress reduction techniques, 5) Limit alcohol consumption."
+        }
+      }
+    ],
+    "note": [
+      {
+        "text": "Patient is motivated and understands the importance of blood pressure control. Family history of cardiovascular disease increases risk. Plan to reassess in 6 weeks and consider referral to cardiologist if target BP not achieved."
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    console.log("✅ CarePlan created successfully");
+    console.log("CarePlan ID:", res.body.id);
+    console.log("Status:", res.body.status);
+    console.log("Intent:", res.body.intent);
+    console.log("Title:", res.body.title);
+    console.log("Subject:", res.body.subject?.display);
+    console.log("Author:", res.body.author?.display);
+    console.log("Period:", res.body.period?.start, "to", res.body.period?.end);
+    console.log("Activities:", res.body.activity?.length || 0);
+    
+    if (res.body.category && res.body.category.length > 0) {
+      console.log("Categories:", res.body.category.map(c => c.coding?.[0]?.display).join(", "));
+    }
+    
+    if (res.body.addresses && res.body.addresses.length > 0) {
+      console.log("\n🎯 Addresses:");
+      res.body.addresses.forEach((addr, index) => {
+        console.log(`${index + 1}. ${addr.display || addr.reference}`);
+      });
+    }
+    
+    if (res.body.goal && res.body.goal.length > 0) {
+      console.log("\n🏆 Goals:");
+      res.body.goal.forEach((goal, index) => {
+        console.log(`${index + 1}. ${goal.display || goal.reference}`);
+      });
+    }
+    
+    if (res.body.activity && res.body.activity.length > 0) {
+      console.log("\n📋 Activities:");
+      res.body.activity.forEach((activity, index) => {
+        console.log(`${index + 1}. ${activity.detail?.code?.text || activity.detail?.kind}`);
+        console.log(`   Status: ${activity.detail?.status}`);
+        if (activity.detail?.description) {
+          console.log(`   Description: ${activity.detail.description.substring(0, 100)}...`);
+        }
+      });
+    }
+    
+    // Store the care plan ID for other requests
+    bru.setEnvVar("lastCreatedCarePlanId", res.body.id);
+  } else {
+    console.log("❌ Failed to create care plan:", res.status, res.body);
+  }
+}

@@ -1,0 +1,70 @@
+meta {
+  name: Search Claims
+  type: http
+  seq: 83
+}
+
+get {
+  url: {{baseUrl}}/{{fhirVersion}}/Claim?patient={{lastCreatedPatientId}}&status=active&_sort=-created&_count=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Accept: application/fhir+json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const bundle = res.body;
+    console.log("✅ Claim search completed successfully");
+    
+    console.log("\n🔍 Search Parameters:");
+    console.log("Patient ID:", "{{lastCreatedPatientId}}");
+    console.log("Status:", "active");
+    console.log("Sort Order:", "Most recent first");
+    console.log("Max Results:", "10");
+    
+    console.log("\n📦 Search Results:");
+    console.log("Total Results:", bundle.total || 0);
+    console.log("Entries Returned:", bundle.entry?.length || 0);
+    
+    if (bundle.entry && bundle.entry.length > 0) {
+      console.log("\n📋 Claim Details:");
+      
+      let totalAmount = 0;
+      bundle.entry.forEach((entry, index) => {
+        const claim = entry.resource;
+        console.log(`\n  --- Claim ${index + 1} ---`);
+        console.log(`  ID: ${claim.id}`);
+        console.log(`  Status: ${claim.status}`);
+        console.log(`  Type: ${claim.type?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`  Priority: ${claim.priority?.coding?.[0]?.display || "Not specified"}`);
+        console.log(`  Created: ${claim.created || "Not specified"}`);
+        console.log(`  Provider: ${claim.provider?.display || claim.provider?.reference || "Not specified"}`);
+        console.log(`  Insurer: ${claim.insurer?.display || claim.insurer?.reference || "Not specified"}`);
+        
+        if (claim.total) {
+          console.log(`  Total: $${claim.total.value} ${claim.total.currency}`);
+          totalAmount += claim.total.value || 0;
+        }
+        
+        console.log(`  Diagnoses: ${claim.diagnosis?.length || 0}`);
+        console.log(`  Procedures: ${claim.procedure?.length || 0}`);
+        console.log(`  Items: ${claim.item?.length || 0}`);
+        console.log(`  Care Team: ${claim.careTeam?.length || 0}`);
+      });
+      
+      console.log("\n💰 Financial Summary:");
+      console.log(`Total Claims Value: $${totalAmount.toFixed(2)}`);
+      console.log(`Average Claim Value: $${(totalAmount / bundle.entry.length).toFixed(2)}`);
+    }
+    
+  } else {
+    console.log("❌ Failed to search Claims:", res.status, res.body);
+  }
+}
